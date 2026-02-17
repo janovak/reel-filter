@@ -32,7 +32,6 @@
 
 /* Component utilities */
 @layer components {
-  /* Content badge colors */
   .badge-safe {
     @apply bg-content-safe text-white;
   }
@@ -45,7 +44,6 @@
     @apply bg-content-unavailable text-white;
   }
 
-  /* Button variants */
   .btn-primary {
     @apply bg-brand-primary text-white px-4 py-2 rounded-lg hover:bg-blue-600 active:bg-blue-700;
   }
@@ -54,12 +52,10 @@
     @apply bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 active:bg-gray-400;
   }
 
-  /* Card component */
   .card {
     @apply bg-white rounded-lg shadow-md p-4;
   }
 
-  /* Minimum touch target size (44x44px) */
   .touch-target {
     @apply min-w-[44px] min-h-[44px];
   }
@@ -67,12 +63,10 @@
 
 /* Utility classes */
 @layer utilities {
-  /* Smooth scroll behavior */
   .scroll-smooth {
     scroll-behavior: smooth;
   }
 
-  /* Truncate text with ellipsis */
   .truncate-2-lines {
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -87,3 +81,45 @@
     overflow: hidden;
   }
 }
+
+/* Dark mode overrides — plain CSS, no @apply nesting */
+.dark body {
+  background-color: #111827;
+  color: #f3f4f6;
+}
+
+.dark .bg-white { background-color: #1f2937; }
+.dark .bg-gray-50 { background-color: #111827; }
+.dark .bg-gray-100 { background-color: #1f2937; }
+.dark .bg-gray-200 { background-color: #374151; }
+.dark .bg-red-50 { background-color: #1f2937; }
+
+.dark .text-gray-900 { color: #f9fafb; }
+.dark .text-gray-800 { color: #f3f4f6; }
+.dark .text-gray-700 { color: #e5e7eb; }
+.dark .text-gray-600 { color: #d1d5db; }
+.dark .text-gray-500 { color: #9ca3af; }
+
+.dark .border-gray-200 { border-color: #374151; }
+.dark .border-gray-300 { border-color: #4b5563; }
+.dark .border-red-200 { border-color: #991b1b; }
+
+.dark .hover\:bg-gray-50:hover { background-color: #374151; }
+.dark .hover\:bg-gray-100:hover { background-color: #374151; }
+.dark .hover\:bg-gray-200:hover { background-color: #4b5563; }
+.dark .hover\:bg-gray-300:hover { background-color: #4b5563; }
+
+.dark input[type="text"],
+.dark input[type="number"],
+.dark input[type="search"] {
+  background-color: #374151;
+  color: #f3f4f6;
+  border-color: #4b5563;
+}
+
+.dark input[type="range"] {
+  background-color: #4b5563;
+}
+
+.dark .shadow-md { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.2); }
+.dark .shadow-sm { box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.2); }

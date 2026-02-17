@@ -8,6 +8,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { SearchResponse } from '../types/api.types'
 import { useFilters } from '../hooks/useFilters'
+import { useDarkMode } from '../hooks/useDarkMode'
 import SearchBar from '../components/SearchBar'
 import FilterPanel from '../components/FilterPanel'
 import MovieCard from '../components/MovieCard'
@@ -15,6 +16,7 @@ import apiClient from '../services/api'
 
 const SearchPage = () => {
   const { filters, updateFilter, resetFilters } = useFilters()
+  const { dark, toggle: toggleDark } = useDarkMode()
   const [searchResults, setSearchResults] = useState<SearchResponse | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -166,19 +168,34 @@ const SearchPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
+      <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-30">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between mb-3">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-                🎬 Reel-Filter
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
+                🎬 Reel Filter
               </h1>
-              <p className="text-sm text-gray-500 hidden sm:block">
+              <p className="text-sm text-gray-500 dark:text-gray-400 hidden sm:block">
                 Discover movies that match your content preferences
               </p>
             </div>
+            <button
+              onClick={toggleDark}
+              className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition min-w-[44px] min-h-[44px] flex items-center justify-center"
+              aria-label="Toggle dark mode"
+            >
+              {dark ? (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+              )}
+            </button>
           </div>
 
           {/* Search Bar */}
@@ -431,19 +448,6 @@ const SearchPage = () => {
         </div>
       )}
 
-      {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 mt-12 py-6">
-        <div className="container mx-auto px-4 text-center text-sm text-gray-500">
-          <p>
-            Reel-Filter • Content data from Kids-in-Mind • Movie data from OMDb API
-          </p>
-          <p className="mt-1">
-            <a href="/docs" target="_blank" rel="noopener noreferrer" className="text-brand-primary hover:underline">
-              API Documentation
-            </a>
-          </p>
-        </div>
-      </footer>
     </div>
   )
 }
