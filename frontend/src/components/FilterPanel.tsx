@@ -1,30 +1,47 @@
 /**
  * FilterPanel Component
- * Controls for filtering movies by content thresholds and other criteria
+ * Full filter controls: content thresholds, genre, year, MPAA, quality ratings, awards
+ * Mobile responsive with collapsible sections
  */
 
-import { useState } from 'react'
-import { SearchFilters } from '../types/api.types'
+import { useState, useEffect } from 'react'
+import { SearchFilters, MPAA_RATINGS, GENRES } from '../types/api.types'
+import apiClient from '../services/api'
 
 interface FilterPanelProps {
   filters: SearchFilters
   onFilterChange: <K extends keyof SearchFilters>(key: K, value: SearchFilters[K]) => void
   onReset: () => void
+  onApply?: () => void
 }
 
-const FilterPanel = ({ filters, onFilterChange, onReset }: FilterPanelProps) => {
-  const [expanded, setExpanded] = useState(true)
+const FilterPanel = ({ filters, onFilterChange, onReset, onApply }: FilterPanelProps) => {
+  const [contentExpanded, setContentExpanded] = useState(true)
+  const [traditionalExpanded, setTraditionalExpanded] = useState(true)
+  const [qualityExpanded, setQualityExpanded] = useState(false)
+  const [availableGenres, setAvailableGenres] = useState<string[]>([...GENRES])
 
-  // Content threshold controls - "any" is represented by null
+  // Fetch available genres from API
+  useEffect(() => {
+    const fetchGenres = async () => {
+      try {
+        const response = await apiClient.get<{ genres: string[] }>('/genres')
+        if (response.data.genres && response.data.genres.length > 0) {
+          setAvailableGenres(response.data.genres)
+        }
+      } catch {
+        // Fall back to static list
+      }
+    }
+    fetchGenres()
+  }, [])
+
+  // Content threshold controls
   const handleContentSliderChange = (
     key: 'sex_max' | 'violence_max' | 'language_max',
     value: string
   ) => {
-    if (value === 'any') {
-      onFilterChange(key, null)
-    } else {
-      onFilterChange(key, parseInt(value, 10))
-    }
+    onFilterChange(key, parseInt(value, 10))
   }
 
   const handleAnyCheckboxChange = (
@@ -32,104 +49,375 @@ const FilterPanel = ({ filters, onFilterChange, onReset }: FilterPanelProps) => 
     checked: boolean
   ) => {
     if (checked) {
-      onFilterChange(key, null) // "any" = null
+      onFilterChange(key, null)
+    } else {
+      onFilterChange(key, 5) // Default to 5 when enabling
     }
   }
 
-  // Get current value for display (handle null = "any")
   const isAnySelected = (threshold: number | null | undefined): boolean => {
     return threshold === null || threshold === undefined
   }
 
+  // Genre toggle
+  const handleGenreToggle = (genre: string) => {
+    const current = filters.genres || []
+    const updated = current.includes(genre)
+      ? current.filter((g) => g !== genre)
+      : [...current, genre]
+    onFilterChange('genres', updated.length > 0 ? updated : undefined)
+  }
+
+  // MPAA rating toggle
+  const handleMpaaToggle = (rating: string) => {
+    const current = filters.mpaa_ratings || []
+    const updated = current.includes(rating)
+      ? current.filter((r) => r !== rating)
+      : [...current, rating]
+    onFilterChange('mpaa_ratings', updated.length > 0 ? updated : undefined)
+  }
+
+  // Collapsible section component
+  const Section = ({
+    title,
+    expanded,
+    onToggle,
+    children,
+    badge,
+  }: {
+    title: string
+    expanded: boolean
+    onToggle: () => void
+    children: React.ReactNode
+    badge?: number
+  }) => (
+    <div className="border-t border-gray-200 pt-4">
+      <button
+        onClick={onToggle}
+        className="flex items-center justify-between w-full text-left min-h-[44px] py-1"
+      >
+        <div className="flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-gray-800 uppercase tracking-wide">{title}</h3>
+          {badge !== undefined && badge > 0 && (
+            <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-brand-primary rounded-full">
+              {badge}
+            </span>
+          )}
+        </div>
+        <svg
+          className={`w-4 h-4 text-gray-500 transform transition-transform ${expanded ? 'rotate-180' : ''}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {expanded && <div className="mt-3 space-y-4">{children}</div>}
+    </div>
+  )
+
+  // Content threshold control
   const ContentThresholdControl = ({
     label,
     filterKey,
     value,
+    color,
   }: {
     label: string
     filterKey: 'sex_max' | 'violence_max' | 'language_max'
     value: number | null | undefined
+    color: string
   }) => (
-    <div className="space-y-3">
+    <div className="space-y-2">
       <div className="flex items-center justify-between">
         <label className="text-sm font-medium text-gray-700">{label}</label>
-        <span className="text-sm font-semibold text-brand-primary">
-          {isAnySelected(value) ? 'Any' : value}
+        <span className={`text-sm font-bold ${isAnySelected(value) ? 'text-gray-400' : color}`}>
+          {isAnySelected(value) ? 'Any' : `≤ ${value}`}
         </span>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
+        <span className="text-xs text-gray-400 w-3">0</span>
         <input
           type="range"
           min="0"
           max="10"
           step="1"
-          value={isAnySelected(value) ? '0' : (value ?? 0)}
+          value={isAnySelected(value) ? 5 : (value ?? 5)}
           onChange={(e) => handleContentSliderChange(filterKey, e.target.value)}
           disabled={isAnySelected(value)}
-          className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer
+                     accent-brand-primary disabled:opacity-40 disabled:cursor-not-allowed"
         />
+        <span className="text-xs text-gray-400 w-4">10</span>
       </div>
 
-      <label className="flex items-center gap-2 text-sm">
+      <label className="flex items-center gap-2 text-sm cursor-pointer min-h-[44px] md:min-h-0">
         <input
           type="checkbox"
           checked={isAnySelected(value)}
           onChange={(e) => handleAnyCheckboxChange(filterKey, e.target.checked)}
-          className="w-4 h-4 rounded border-gray-300 cursor-pointer"
+          className="w-4 h-4 rounded border-gray-300 text-brand-primary focus:ring-brand-primary cursor-pointer"
         />
-        <span className="text-gray-600">Show all</span>
+        <span className="text-gray-600">No limit</span>
       </label>
     </div>
   )
 
+  // Count active filters
+  const activeContentFilters = [filters.sex_max, filters.violence_max, filters.language_max].filter(
+    (v) => v !== null && v !== undefined
+  ).length
+  const activeTraditionalFilters =
+    (filters.genres && filters.genres.length > 0 ? 1 : 0) +
+    (filters.year_min ? 1 : 0) +
+    (filters.year_max ? 1 : 0) +
+    (filters.mpaa_ratings && filters.mpaa_ratings.length > 0 ? 1 : 0) +
+    (filters.awards_min ? 1 : 0)
+  const activeQualityFilters =
+    (filters.imdb_min && filters.imdb_min > 0 ? 1 : 0) +
+    (filters.rt_min && filters.rt_min > 0 ? 1 : 0) +
+    (filters.metacritic_min && filters.metacritic_min > 0 ? 1 : 0)
+
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-      <div
-        className="flex items-center justify-between cursor-pointer mb-4"
-        onClick={() => setExpanded(!expanded)}
-      >
-        <h2 className="text-xl font-bold text-gray-800">Filters</h2>
-        <button className="text-gray-500 hover:text-gray-700">
-          {expanded ? '−' : '+'}
+    <div className="bg-white rounded-lg shadow-md p-4 md:p-6">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-bold text-gray-800">Filters</h2>
+        <button
+          onClick={onReset}
+          className="text-sm text-brand-primary hover:text-blue-700 font-medium min-h-[44px] md:min-h-0 px-2"
+        >
+          Reset All
         </button>
       </div>
 
-      {expanded && (
-        <div className="space-y-6">
-          {/* Content Thresholds */}
-          <div className="border-t pt-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Content Thresholds</h3>
-            <div className="space-y-6">
-              <ContentThresholdControl
-                label="Sex & Nudity"
-                filterKey="sex_max"
-                value={filters.sex_max}
+      <div className="space-y-4">
+        {/* Content Thresholds Section */}
+        <Section
+          title="Content Thresholds"
+          expanded={contentExpanded}
+          onToggle={() => setContentExpanded(!contentExpanded)}
+          badge={activeContentFilters}
+        >
+          <ContentThresholdControl
+            label="Sex & Nudity"
+            filterKey="sex_max"
+            value={filters.sex_max}
+            color="text-pink-600"
+          />
+          <ContentThresholdControl
+            label="Violence & Gore"
+            filterKey="violence_max"
+            value={filters.violence_max}
+            color="text-red-600"
+          />
+          <ContentThresholdControl
+            label="Language & Profanity"
+            filterKey="language_max"
+            value={filters.language_max}
+            color="text-orange-600"
+          />
+        </Section>
+
+        {/* Traditional Filters Section */}
+        <Section
+          title="Movie Filters"
+          expanded={traditionalExpanded}
+          onToggle={() => setTraditionalExpanded(!traditionalExpanded)}
+          badge={activeTraditionalFilters}
+        >
+          {/* Genre Multi-Select */}
+          <div>
+            <label className="text-sm font-medium text-gray-700 block mb-2">Genres</label>
+            <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto">
+              {availableGenres.map((genre) => {
+                const isSelected = filters.genres?.includes(genre)
+                return (
+                  <button
+                    key={genre}
+                    onClick={() => handleGenreToggle(genre)}
+                    className={`px-2.5 py-1 text-xs rounded-full font-medium transition-colors min-h-[32px]
+                      ${isSelected
+                        ? 'bg-brand-primary text-white'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                  >
+                    {genre}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Year Range */}
+          <div>
+            <label className="text-sm font-medium text-gray-700 block mb-2">Year Range</label>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                placeholder="From"
+                min={1888}
+                max={2100}
+                value={filters.year_min ?? ''}
+                onChange={(e) =>
+                  onFilterChange('year_min', e.target.value ? parseInt(e.target.value) : undefined)
+                }
+                className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none
+                           focus:border-brand-primary focus:ring-1 focus:ring-brand-primary/30 min-h-[44px] md:min-h-0"
               />
-              <ContentThresholdControl
-                label="Violence & Gore"
-                filterKey="violence_max"
-                value={filters.violence_max}
-              />
-              <ContentThresholdControl
-                label="Language & Profanity"
-                filterKey="language_max"
-                value={filters.language_max}
+              <span className="text-gray-400 text-sm">–</span>
+              <input
+                type="number"
+                placeholder="To"
+                min={1888}
+                max={2100}
+                value={filters.year_max ?? ''}
+                onChange={(e) =>
+                  onFilterChange('year_max', e.target.value ? parseInt(e.target.value) : undefined)
+                }
+                className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none
+                           focus:border-brand-primary focus:ring-1 focus:ring-brand-primary/30 min-h-[44px] md:min-h-0"
               />
             </div>
           </div>
 
-          {/* Reset Button */}
-          <div className="flex gap-2 pt-4 border-t">
+          {/* MPAA Rating Multi-Select */}
+          <div>
+            <label className="text-sm font-medium text-gray-700 block mb-2">MPAA Rating</label>
+            <div className="flex flex-wrap gap-1.5">
+              {MPAA_RATINGS.map((rating) => {
+                const isSelected = filters.mpaa_ratings?.includes(rating)
+                return (
+                  <button
+                    key={rating}
+                    onClick={() => handleMpaaToggle(rating)}
+                    className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-colors min-h-[36px]
+                      ${isSelected
+                        ? 'bg-brand-secondary text-white'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-200'
+                      }`}
+                  >
+                    {rating}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Awards Filter */}
+          <div>
+            <label className="text-sm font-medium text-gray-700 block mb-2">
+              Minimum Awards Won
+            </label>
+            <input
+              type="number"
+              placeholder="e.g. 1"
+              min={0}
+              value={filters.awards_min ?? ''}
+              onChange={(e) =>
+                onFilterChange('awards_min', e.target.value ? parseInt(e.target.value) : undefined)
+              }
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none
+                         focus:border-brand-primary focus:ring-1 focus:ring-brand-primary/30 min-h-[44px] md:min-h-0"
+            />
+          </div>
+        </Section>
+
+        {/* Quality Ratings Section */}
+        <Section
+          title="Quality Ratings"
+          expanded={qualityExpanded}
+          onToggle={() => setQualityExpanded(!qualityExpanded)}
+          badge={activeQualityFilters}
+        >
+          {/* IMDb Minimum */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-sm font-medium text-gray-700">IMDb Rating</label>
+              <span className="text-sm font-bold text-yellow-600">
+                {filters.imdb_min && filters.imdb_min > 0 ? `≥ ${filters.imdb_min}` : 'Any'}
+              </span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="10"
+              step="0.5"
+              value={filters.imdb_min ?? 0}
+              onChange={(e) => onFilterChange('imdb_min', parseFloat(e.target.value) || undefined)}
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-yellow-500"
+            />
+            <div className="flex justify-between text-xs text-gray-400 mt-1">
+              <span>0</span>
+              <span>5</span>
+              <span>10</span>
+            </div>
+          </div>
+
+          {/* Rotten Tomatoes Minimum */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-sm font-medium text-gray-700">Rotten Tomatoes</label>
+              <span className="text-sm font-bold text-red-600">
+                {filters.rt_min && filters.rt_min > 0 ? `≥ ${filters.rt_min}%` : 'Any'}
+              </span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              step="5"
+              value={filters.rt_min ?? 0}
+              onChange={(e) => onFilterChange('rt_min', parseInt(e.target.value) || undefined)}
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-red-500"
+            />
+            <div className="flex justify-between text-xs text-gray-400 mt-1">
+              <span>0%</span>
+              <span>50%</span>
+              <span>100%</span>
+            </div>
+          </div>
+
+          {/* Metacritic Minimum */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-sm font-medium text-gray-700">Metacritic</label>
+              <span className="text-sm font-bold text-green-600">
+                {filters.metacritic_min && filters.metacritic_min > 0 ? `≥ ${filters.metacritic_min}` : 'Any'}
+              </span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              step="5"
+              value={filters.metacritic_min ?? 0}
+              onChange={(e) => onFilterChange('metacritic_min', parseInt(e.target.value) || undefined)}
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-green-500"
+            />
+            <div className="flex justify-between text-xs text-gray-400 mt-1">
+              <span>0</span>
+              <span>50</span>
+              <span>100</span>
+            </div>
+          </div>
+        </Section>
+
+        {/* Apply Button (mobile) */}
+        {onApply && (
+          <div className="pt-4 border-t border-gray-200 md:hidden">
             <button
-              onClick={onReset}
-              className="flex-1 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-lg transition"
+              onClick={onApply}
+              className="w-full py-3 bg-brand-primary text-white font-semibold rounded-lg
+                         hover:bg-blue-600 active:bg-blue-700 transition min-h-[44px]"
             >
-              Reset All
+              Apply Filters
             </button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }

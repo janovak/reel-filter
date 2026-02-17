@@ -1,42 +1,43 @@
 """Movies API routes"""
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 
 from src.database.session import get_db
 from src.services.search_service import SearchService
+from src.services.movie_service import MovieService
 from src.api.schemas.search import SearchFilters
-from src.api.schemas.movie import MovieSchema, SearchResponse
+from src.api.schemas.movie import MovieSchema, MovieDetailSchema, SearchResponse
 
 router = APIRouter()
 
 
 @router.get("/search", response_model=SearchResponse)
 async def search_movies(
-    q: str = None,
-    genres: List[str] = None,
-    year_min: int = None,
-    year_max: int = None,
-    mpaa_ratings: List[str] = None,
-    imdb_min: float = None,
-    rt_min: int = None,
-    metacritic_min: int = None,
-    awards_min: int = None,
-    sex_max: int = None,
-    violence_max: int = None,
-    language_max: int = None,
+    q: Optional[str] = None,
+    genres: Optional[List[str]] = Query(None),
+    year_min: Optional[int] = None,
+    year_max: Optional[int] = None,
+    mpaa_ratings: Optional[List[str]] = Query(None),
+    imdb_min: Optional[float] = None,
+    rt_min: Optional[int] = None,
+    metacritic_min: Optional[int] = None,
+    awards_min: Optional[int] = None,
+    sex_max: Optional[int] = None,
+    violence_max: Optional[int] = None,
+    language_max: Optional[int] = None,
     page: int = 1,
     per_page: int = 30,
     db: Session = Depends(get_db)
 ):
     """
     Search and filter movies.
-    
+
     Content filtering logic:
     - When ANY content threshold is set (not null), only movies WITH content scores are returned
     - When ALL content thresholds are null, all movies are returned (with or without content scores)
     - Movies exceeding ANY threshold are filtered out
-    
+
     Pagination: Returns 20-30 movies per page with pagination metadata
     """
     # Build filters object
@@ -56,32 +57,36 @@ async def search_movies(
         page=page,
         per_page=per_page
     )
-    
+
     # Execute search
     service = SearchService(db)
     movies, pagination = service.search_movies(filters)
-    
+
     # Convert ORM models to Pydantic schemas
     movie_schemas = [MovieSchema.from_orm(movie) for movie in movies]
-    
+
     return SearchResponse(movies=movie_schemas, pagination=pagination)
 
 
-@router.get("/{movie_id}", response_model=MovieSchema)
+@router.get("/{movie_id}", response_model=MovieDetailSchema)
 async def get_movie(
     movie_id: str,
     db: Session = Depends(get_db)
 ):
     """
-    Get a single movie by ID with content score.
+    Get comprehensive movie details by ID.
+    Returns full movie metadata including plot, awards, timestamps, and content scores.
     """
-    service = SearchService(db)
+    service = MovieService(db)
     movie = service.get_movie_by_id(movie_id)
-    
+
     if not movie:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Movie with ID {movie_id} not found"
+            detail={
+                "error": "Movie not found",
+                "message": f"No movie exists with ID: {movie_id}"
+            }
         )
-    
-    return MovieSchema.from_orm(movie)
+
+    return MovieDetailSchema.from_orm(movie)

@@ -7,7 +7,7 @@
 
 **Note**: Tests are NOT included as the spec does not explicitly request TDD or test implementation.
 
-## Format: `- [ ] [ID] [P?] [Story] Description`
+## Format: `- [X] [ID] [P?] [Story] Description`
 
 - **[P]**: Can run in parallel (different files, no dependencies)
 - **[Story]**: Which user story this task belongs to (e.g., US1, US2, US3, US4)
@@ -25,16 +25,16 @@
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Create project directory structure (backend/, frontend/, shared/, specs/)
-- [ ] T002 Initialize Python 3.11+ backend with FastAPI in backend/
-- [ ] T003 [P] Initialize React 18+ TypeScript frontend with Vite in frontend/
-- [ ] T004 [P] Setup Docker Compose with PostgreSQL 15+ and Redis 7+ in docker-compose.yml
-- [ ] T005 [P] Create backend requirements.txt with FastAPI, SQLAlchemy, Celery, httpx, BeautifulSoup4, RapidFuzz
-- [ ] T006 [P] Create frontend package.json with React, TypeScript, Tailwind CSS, Axios, React Router
-- [ ] T007 [P] Configure backend .env.example with OMDb API key, database URL, Redis URL, rate limits
-- [ ] T008 [P] Configure frontend .env.example with API base URL
-- [ ] T009 [P] Setup Alembic for database migrations in backend/alembic/
-- [ ] T010 [P] Initialize Tailwind CSS configuration in frontend/tailwind.config.js
+- [X] T001 Create project directory structure (backend/, frontend/, shared/, specs/)
+- [X] T002 Initialize Python 3.11+ backend with FastAPI in backend/
+- [X] T003 [P] Initialize React 18+ TypeScript frontend with Vite in frontend/
+- [X] T004 [P] Setup Docker Compose with PostgreSQL 15+ and Redis 7+ in docker-compose.yml
+- [X] T005 [P] Create backend requirements.txt with FastAPI, SQLAlchemy, Celery, httpx, BeautifulSoup4, RapidFuzz
+- [X] T006 [P] Create frontend package.json with React, TypeScript, Tailwind CSS, Axios, React Router
+- [X] T007 [P] Configure backend .env.example with OMDb API key, database URL, Redis URL, rate limits
+- [X] T008 [P] Configure frontend .env.example with API base URL
+- [X] T009 [P] Setup Alembic for database migrations in backend/alembic/
+- [X] T010 [P] Initialize Tailwind CSS configuration in frontend/tailwind.config.js
 
 ---
 
@@ -44,21 +44,21 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T011 Create PostgreSQL database schema with movies, content_scores, data_refresh_logs tables in backend/alembic/versions/001_initial_schema.py
-- [ ] T012 [P] Create SQLAlchemy base model in backend/src/database/base.py
-- [ ] T013 [P] Setup database session and connection pooling in backend/src/database/session.py
-- [ ] T014 [P] Create Movie SQLAlchemy model in backend/src/models/movie.py
-- [ ] T015 [P] Create ContentScore SQLAlchemy model in backend/src/models/content_score.py
-- [ ] T016 [P] Create DataRefreshLog SQLAlchemy model in backend/src/models/data_refresh_log.py
-- [ ] T017 Create database indexes (GIN for genre/title, B-tree for ratings, composite indexes) in backend/alembic/versions/002_add_indexes.py
-- [ ] T018 [P] Setup FastAPI application structure with CORS middleware in backend/src/main.py
-- [ ] T019 [P] Create error handling middleware in backend/src/api/middleware/error_handler.py
-- [ ] T020 [P] Create logging middleware in backend/src/api/middleware/logging.py
-- [ ] T021 [P] Setup React Router configuration in frontend/src/App.tsx
-- [ ] T022 [P] Create API client service with axios configuration in frontend/src/services/api.ts
-- [ ] T023 [P] Create TypeScript types from API schema in frontend/src/types/api.types.ts
-- [ ] T024 [P] Create useFilters hook for session storage in frontend/src/hooks/useFilters.ts
-- [ ] T025 [P] Setup Tailwind base styles in frontend/src/styles/index.css
+- [X] T011 Create PostgreSQL database schema with movies, content_scores, data_refresh_logs tables in backend/alembic/versions/001_initial_schema.py
+- [X] T012 [P] Create SQLAlchemy base model in backend/src/database/base.py
+- [X] T013 [P] Setup database session and connection pooling in backend/src/database/session.py
+- [X] T014 [P] Create Movie SQLAlchemy model in backend/src/models/movie.py
+- [X] T015 [P] Create ContentScore SQLAlchemy model in backend/src/models/content_score.py
+- [X] T016 [P] Create DataRefreshLog SQLAlchemy model in backend/src/models/data_refresh_log.py
+- [X] T017 Create database indexes (GIN for genre/title, B-tree for ratings, composite indexes) in backend/alembic/versions/002_add_indexes.py
+- [X] T018 [P] Setup FastAPI application structure with CORS middleware in backend/src/main.py
+- [X] T019 [P] Create error handling middleware in backend/src/api/middleware/error_handler.py
+- [X] T020 [P] Create logging middleware in backend/src/api/middleware/logging.py
+- [X] T021 [P] Setup React Router configuration in frontend/src/App.tsx
+- [X] T022 [P] Create API client service with axios configuration in frontend/src/services/api.ts
+- [X] T023 [P] Create TypeScript types from API schema in frontend/src/types/api.types.ts
+- [X] T024 [P] Create useFilters hook for session storage in frontend/src/hooks/useFilters.ts
+- [X] T025 [P] Setup Tailwind base styles in frontend/src/styles/index.css
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -74,25 +74,25 @@
 
 #### Backend Implementation
 
-- [ ] T026 [P] [US1] Create Pydantic schemas for search filters in backend/src/api/schemas/search.py
-- [ ] T027 [P] [US1] Create Pydantic schemas for movie response in backend/src/api/schemas/movie.py
-- [ ] T028 [US1] Implement SearchService with content filtering logic in backend/src/services/search_service.py
-- [ ] T029 [US1] Implement GET /api/movies/search endpoint with content threshold filters in backend/src/api/routes/movies.py
-- [ ] T030 [US1] Add content filtering query logic (sex_max, violence_max, language_max) to SearchService
-- [ ] T031 [US1] Implement "hide movies without content scores when any filter active" logic in SearchService
-- [ ] T032 [US1] Add pagination support (20-30 movies per page) to search endpoint
+- [X] T026 [P] [US1] Create Pydantic schemas for search filters in backend/src/api/schemas/search.py
+- [X] T027 [P] [US1] Create Pydantic schemas for movie response in backend/src/api/schemas/movie.py
+- [X] T028 [US1] Implement SearchService with content filtering logic in backend/src/services/search_service.py
+- [X] T029 [US1] Implement GET /api/movies/search endpoint with content threshold filters in backend/src/api/routes/movies.py
+- [X] T030 [US1] Add content filtering query logic (sex_max, violence_max, language_max) to SearchService
+- [X] T031 [US1] Implement "hide movies without content scores when any filter active" logic in SearchService
+- [X] T032 [US1] Add pagination support (20-30 movies per page) to search endpoint
 
 #### Frontend Implementation
 
-- [ ] T033 [P] [US1] Create ContentBadge component with color-coded badges (green/red) in frontend/src/components/ContentBadge.tsx
-- [ ] T034 [P] [US1] Create FilterPanel component with content threshold sliders in frontend/src/components/FilterPanel.tsx
-- [ ] T035 [P] [US1] Create MovieCard component displaying poster, title, year, genre, ratings, content badges in frontend/src/components/MovieCard.tsx
-- [ ] T036 [US1] Create SearchPage with filter panel and results grid in frontend/src/pages/SearchPage.tsx
-- [ ] T037 [US1] Implement content threshold controls (0-10 sliders and "any" option) in FilterPanel
-- [ ] T038 [US1] Connect FilterPanel to useFilters hook for session persistence
-- [ ] T039 [US1] Implement search API call with content threshold parameters in SearchPage
-- [ ] T040 [US1] Add color-coded content badges to MovieCard (green if within threshold, red if exceeds)
-- [ ] T041 [US1] Implement pagination controls in SearchPage
+- [X] T033 [P] [US1] Create ContentBadge component with color-coded badges (green/red) in frontend/src/components/ContentBadge.tsx
+- [X] T034 [P] [US1] Create FilterPanel component with content threshold sliders in frontend/src/components/FilterPanel.tsx
+- [X] T035 [P] [US1] Create MovieCard component displaying poster, title, year, genre, ratings, content badges in frontend/src/components/MovieCard.tsx
+- [X] T036 [US1] Create SearchPage with filter panel and results grid in frontend/src/pages/SearchPage.tsx
+- [X] T037 [US1] Implement content threshold controls (0-10 sliders and "any" option) in FilterPanel
+- [X] T038 [US1] Connect FilterPanel to useFilters hook for session persistence
+- [X] T039 [US1] Implement search API call with content threshold parameters in SearchPage
+- [X] T040 [US1] Add color-coded content badges to MovieCard (green if within threshold, red if exceeds)
+- [X] T041 [US1] Implement pagination controls in SearchPage
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently. Users can set content thresholds and see filtered results.
 
@@ -108,26 +108,26 @@
 
 #### Backend Implementation
 
-- [ ] T042 [P] [US2] Add title full-text search to SearchService using PostgreSQL GIN index in backend/src/services/search_service.py
-- [ ] T043 [P] [US2] Add genre filtering (array overlap) to SearchService in backend/src/services/search_service.py
-- [ ] T044 [P] [US2] Add year range filtering to SearchService in backend/src/services/search_service.py
-- [ ] T045 [P] [US2] Add MPAA rating filtering to SearchService in backend/src/services/search_service.py
-- [ ] T046 [P] [US2] Add quality rating filters (IMDb, Rotten Tomatoes, Metacritic minimums) to SearchService in backend/src/services/search_service.py
-- [ ] T047 [P] [US2] Add awards filtering to SearchService in backend/src/services/search_service.py
-- [ ] T048 [US2] Implement GET /api/genres endpoint in backend/src/api/routes/metadata.py
+- [X] T042 [P] [US2] Add title full-text search to SearchService using PostgreSQL GIN index in backend/src/services/search_service.py
+- [X] T043 [P] [US2] Add genre filtering (array overlap) to SearchService in backend/src/services/search_service.py
+- [X] T044 [P] [US2] Add year range filtering to SearchService in backend/src/services/search_service.py
+- [X] T045 [P] [US2] Add MPAA rating filtering to SearchService in backend/src/services/search_service.py
+- [X] T046 [P] [US2] Add quality rating filters (IMDb, Rotten Tomatoes, Metacritic minimums) to SearchService in backend/src/services/search_service.py
+- [X] T047 [P] [US2] Add awards filtering to SearchService in backend/src/services/search_service.py
+- [X] T048 [US2] Implement GET /api/genres endpoint in backend/src/api/routes/metadata.py
 
 #### Frontend Implementation
 
-- [ ] T049 [P] [US2] Create SearchBar component with title search input in frontend/src/components/SearchBar.tsx
-- [ ] T050 [US2] Add genre multi-select dropdown to FilterPanel in frontend/src/components/FilterPanel.tsx
-- [ ] T051 [US2] Add year range inputs (min/max) to FilterPanel in frontend/src/components/FilterPanel.tsx
-- [ ] T052 [US2] Add MPAA rating multi-select to FilterPanel in frontend/src/components/FilterPanel.tsx
-- [ ] T053 [US2] Add quality rating minimum sliders (IMDb, RT, Metacritic) to FilterPanel in frontend/src/components/FilterPanel.tsx
-- [ ] T054 [US2] Add awards filter controls to FilterPanel in frontend/src/components/FilterPanel.tsx
-- [ ] T055 [US2] Update MovieCard to display poster image with placeholder fallback in frontend/src/components/MovieCard.tsx
-- [ ] T056 [US2] Update MovieCard to display ratings from all sources (IMDb, RT, Metacritic) in frontend/src/components/MovieCard.tsx
-- [ ] T057 [US2] Integrate SearchBar with SearchPage API calls in frontend/src/pages/SearchPage.tsx
-- [ ] T058 [US2] Implement "no results" message with filter relaxation suggestions in frontend/src/pages/SearchPage.tsx
+- [X] T049 [P] [US2] Create SearchBar component with title search input in frontend/src/components/SearchBar.tsx
+- [X] T050 [US2] Add genre multi-select dropdown to FilterPanel in frontend/src/components/FilterPanel.tsx
+- [X] T051 [US2] Add year range inputs (min/max) to FilterPanel in frontend/src/components/FilterPanel.tsx
+- [X] T052 [US2] Add MPAA rating multi-select to FilterPanel in frontend/src/components/FilterPanel.tsx
+- [X] T053 [US2] Add quality rating minimum sliders (IMDb, RT, Metacritic) to FilterPanel in frontend/src/components/FilterPanel.tsx
+- [X] T054 [US2] Add awards filter controls to FilterPanel in frontend/src/components/FilterPanel.tsx
+- [X] T055 [US2] Update MovieCard to display poster image with placeholder fallback in frontend/src/components/MovieCard.tsx
+- [X] T056 [US2] Update MovieCard to display ratings from all sources (IMDb, RT, Metacritic) in frontend/src/components/MovieCard.tsx
+- [X] T057 [US2] Integrate SearchBar with SearchPage API calls in frontend/src/pages/SearchPage.tsx
+- [X] T058 [US2] Implement "no results" message with filter relaxation suggestions in frontend/src/pages/SearchPage.tsx
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently. Users can search by title and use both traditional and content filters.
 
@@ -143,19 +143,19 @@
 
 #### Backend Implementation
 
-- [ ] T059 [P] [US3] Create MovieService for retrieving single movie details in backend/src/services/movie_service.py
-- [ ] T060 [US3] Implement GET /api/movies/{id} endpoint in backend/src/api/routes/movies.py
-- [ ] T061 [US3] Add plot, awards_metadata, timestamps to movie detail response schema in backend/src/api/schemas/movie.py
+- [X] T059 [P] [US3] Create MovieService for retrieving single movie details in backend/src/services/movie_service.py
+- [X] T060 [US3] Implement GET /api/movies/{id} endpoint in backend/src/api/routes/movies.py
+- [X] T061 [US3] Add plot, awards_metadata, timestamps to movie detail response schema in backend/src/api/schemas/movie.py
 
 #### Frontend Implementation
 
-- [ ] T062 [P] [US3] Create MovieDetail page component in frontend/src/pages/MovieDetail.tsx
-- [ ] T063 [US3] Add comprehensive movie information display (title, year, runtime, plot, director, cast) to MovieDetail
-- [ ] T064 [US3] Add all rating sources display section to MovieDetail (IMDb, RT, Metacritic with icons)
-- [ ] T065 [US3] Add awards information section to MovieDetail (awards summary, specific awards list)
-- [ ] T066 [US3] Add detailed content scores display with color-coded badges and threshold indicators to MovieDetail
-- [ ] T067 [US3] Implement navigation from MovieCard to MovieDetail page using React Router
-- [ ] T068 [US3] Add back button to return to search results in MovieDetail
+- [X] T062 [P] [US3] Create MovieDetail page component in frontend/src/pages/MovieDetail.tsx
+- [X] T063 [US3] Add comprehensive movie information display (title, year, runtime, plot, director, cast) to MovieDetail
+- [X] T064 [US3] Add all rating sources display section to MovieDetail (IMDb, RT, Metacritic with icons)
+- [X] T065 [US3] Add awards information section to MovieDetail (awards summary, specific awards list)
+- [X] T066 [US3] Add detailed content scores display with color-coded badges and threshold indicators to MovieDetail
+- [X] T067 [US3] Implement navigation from MovieCard to MovieDetail page using React Router
+- [X] T068 [US3] Add back button to return to search results in MovieDetail
 
 **Checkpoint**: All three priority user stories (P1, P2, P3) are now independently functional. Users have full movie search and detail viewing capabilities.
 
@@ -169,15 +169,15 @@
 
 ### Implementation for User Story 4
 
-- [ ] T069 [P] [US4] Add mobile breakpoints to Tailwind configuration in frontend/tailwind.config.js
-- [ ] T070 [P] [US4] Make FilterPanel responsive with collapsible sections on mobile in frontend/src/components/FilterPanel.tsx
-- [ ] T071 [P] [US4] Make SearchBar responsive with appropriate font sizes on mobile in frontend/src/components/SearchBar.tsx
-- [ ] T072 [P] [US4] Make MovieCard responsive with vertical stacking on mobile in frontend/src/components/MovieCard.tsx
-- [ ] T073 [P] [US4] Make SearchPage layout responsive with filter drawer on mobile in frontend/src/pages/SearchPage.tsx
-- [ ] T074 [P] [US4] Make MovieDetail responsive with single column layout on mobile in frontend/src/pages/MovieDetail.tsx
-- [ ] T075 [P] [US4] Ensure touch targets are minimum 44x44px for all interactive elements in frontend/src/styles/index.css
-- [ ] T076 [US4] Add viewport meta tag for mobile scaling in frontend/index.html
-- [ ] T077 [US4] Test responsive design on mobile viewports (375px, 768px, 1024px)
+- [X] T069 [P] [US4] Add mobile breakpoints to Tailwind configuration in frontend/tailwind.config.js
+- [X] T070 [P] [US4] Make FilterPanel responsive with collapsible sections on mobile in frontend/src/components/FilterPanel.tsx
+- [X] T071 [P] [US4] Make SearchBar responsive with appropriate font sizes on mobile in frontend/src/components/SearchBar.tsx
+- [X] T072 [P] [US4] Make MovieCard responsive with vertical stacking on mobile in frontend/src/components/MovieCard.tsx
+- [X] T073 [P] [US4] Make SearchPage layout responsive with filter drawer on mobile in frontend/src/pages/SearchPage.tsx
+- [X] T074 [P] [US4] Make MovieDetail responsive with single column layout on mobile in frontend/src/pages/MovieDetail.tsx
+- [X] T075 [P] [US4] Ensure touch targets are minimum 44x44px for all interactive elements in frontend/src/styles/index.css
+- [X] T076 [US4] Add viewport meta tag for mobile scaling in frontend/index.html
+- [X] T077 [US4] Test responsive design on mobile viewports (375px, 768px, 1024px)
 
 **Checkpoint**: All four user stories are complete. The application is fully functional on both desktop and mobile devices.
 
@@ -187,18 +187,18 @@
 
 **Purpose**: Implement data ingestion from OMDb API and Kids-in-Mind scraping
 
-- [ ] T078 [P] Create OMDb API client with retry logic and rate limiting in backend/src/integrations/omdb_client.py
-- [ ] T079 [P] Create Kids-in-Mind scraper with BeautifulSoup4 in backend/src/integrations/kim_scraper.py
-- [ ] T080 [P] Implement fuzzy matching service using RapidFuzz in backend/src/services/matching_service.py
-- [ ] T081 Create Celery application configuration in backend/src/jobs/celery_app.py
-- [ ] T082 Implement weekly data refresh task (OMDb fetch + KIM scraping + fuzzy matching) in backend/src/jobs/weekly_refresh.py
-- [ ] T083 Add Celery Beat schedule for Sunday 2 AM refresh in backend/src/jobs/celery_app.py
-- [ ] T084 Create data refresh logging to DataRefreshLog table in backend/src/jobs/weekly_refresh.py
-- [ ] T085 [P] Create manual refresh script for development in backend/scripts/manual_refresh.py
-- [ ] T086 [P] Implement error handling and retry logic (exponential backoff) in OMDb client
-- [ ] T087 [P] Implement rate limiting (10 req/s for OMDb, 0.5 req/s for KIM) in clients
-- [ ] T088 Add validation for scraped content scores (0-10 range) in KIM scraper
-- [ ] T089 Implement manual review queue for fuzzy matches (75-88 confidence) in matching service
+- [X] T078 [P] Create OMDb API client with retry logic and rate limiting in backend/src/integrations/omdb_client.py
+- [X] T079 [P] Create Kids-in-Mind scraper with BeautifulSoup4 in backend/src/integrations/kim_scraper.py
+- [X] T080 [P] Implement fuzzy matching service using RapidFuzz in backend/src/services/matching_service.py
+- [X] T081 Create Celery application configuration in backend/src/jobs/celery_app.py
+- [X] T082 Implement weekly data refresh task (OMDb fetch + KIM scraping + fuzzy matching) in backend/src/jobs/weekly_refresh.py
+- [X] T083 Add Celery Beat schedule for Sunday 2 AM refresh in backend/src/jobs/celery_app.py
+- [X] T084 Create data refresh logging to DataRefreshLog table in backend/src/jobs/weekly_refresh.py
+- [X] T085 [P] Create manual refresh script for development in backend/scripts/manual_refresh.py
+- [X] T086 [P] Implement error handling and retry logic (exponential backoff) in OMDb client
+- [X] T087 [P] Implement rate limiting (10 req/s for OMDb, 0.5 req/s for KIM) in clients
+- [X] T088 Add validation for scraped content scores (0-10 range) in KIM scraper
+- [X] T089 Implement manual review queue for fuzzy matches (75-88 confidence) in matching service
 
 ---
 
@@ -206,12 +206,12 @@
 
 **Purpose**: Health check endpoint and operational monitoring
 
-- [ ] T090 [P] Implement GET /api/health endpoint in backend/src/api/routes/health.py
-- [ ] T091 [US1] Add database connectivity check to health endpoint
-- [ ] T092 [US1] Add last refresh timestamp to health endpoint from DataRefreshLog
-- [ ] T093 [P] Create seed test data script for development in backend/scripts/seed_test_data.py
-- [ ] T093b [P] Add query performance logging middleware that logs execution time for all database queries in backend/src/api/middleware/performance.py
-- [ ] T093c [P] Add slow query warning logs for any query exceeding 500ms threshold in backend/src/api/middleware/performance.py
+- [X] T090 [P] Implement GET /api/health endpoint in backend/src/api/routes/health.py
+- [X] T091 [US1] Add database connectivity check to health endpoint
+- [X] T092 [US1] Add last refresh timestamp to health endpoint from DataRefreshLog
+- [X] T093 [P] Create seed test data script for development in backend/scripts/seed_test_data.py
+- [X] T093b [P] Add query performance logging middleware that logs execution time for all database queries in backend/src/api/middleware/performance.py
+- [X] T093c [P] Add slow query warning logs for any query exceeding 500ms threshold in backend/src/api/middleware/performance.py
 
 ---
 
@@ -219,18 +219,18 @@
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T094 [P] Add loading spinners for API calls in frontend/src/components/LoadingSpinner.tsx
-- [ ] T095 [P] Add error boundary component for React errors in frontend/src/components/ErrorBoundary.tsx
-- [ ] T096 [P] Implement user-friendly error messages for API failures in frontend/src/services/api.ts
-- [ ] T097 [P] Add "Content ratings unavailable" indicator for movies without content scores: gray badge with "N/A" text and tooltip "Content ratings not available for this movie" in frontend/src/components/MovieCard.tsx
-- [ ] T098 [P] Optimize query performance with query plan analysis (EXPLAIN ANALYZE) in backend/
-- [ ] T099 [P] Add logging for search queries and filter usage in backend/src/api/middleware/logging.py
-- [ ] T100 [P] Create README.md with setup instructions at repository root
-- [ ] T101 Validate quickstart.md setup instructions work correctly
-- [ ] T102 [P] Add API documentation link in frontend footer
-- [ ] T103 [P] Code cleanup and consistent formatting (Black for Python, Prettier for TypeScript)
-- [ ] T104 [P] Create placeholder movie poster image (300x450px, neutral gray with film icon) at frontend/src/assets/no-poster.png
-- [ ] T105 [P] Add content score legend component with tooltip labels (0=None, 3=Mild, 5=Moderate, 7=Strong, 10=Extreme) in frontend/src/components/ScoreLegend.tsx
+- [X] T094 [P] Add loading spinners for API calls in frontend/src/components/LoadingSpinner.tsx
+- [X] T095 [P] Add error boundary component for React errors in frontend/src/components/ErrorBoundary.tsx
+- [X] T096 [P] Implement user-friendly error messages for API failures in frontend/src/services/api.ts
+- [X] T097 [P] Add "Content ratings unavailable" indicator for movies without content scores: gray badge with "N/A" text and tooltip "Content ratings not available for this movie" in frontend/src/components/MovieCard.tsx
+- [X] T098 [P] Optimize query performance with query plan analysis (EXPLAIN ANALYZE) in backend/
+- [X] T099 [P] Add logging for search queries and filter usage in backend/src/api/middleware/logging.py
+- [X] T100 [P] Create README.md with setup instructions at repository root
+- [X] T101 Validate quickstart.md setup instructions work correctly
+- [X] T102 [P] Add API documentation link in frontend footer
+- [X] T103 [P] Code cleanup and consistent formatting (Black for Python, Prettier for TypeScript)
+- [X] T104 [P] Create placeholder movie poster image (300x450px, neutral gray with film icon) at frontend/src/assets/no-poster.png
+- [X] T105 [P] Add content score legend component with tooltip labels (0=None, 3=Mild, 5=Moderate, 7=Strong, 10=Extreme) in frontend/src/components/ScoreLegend.tsx
 
 ---
 

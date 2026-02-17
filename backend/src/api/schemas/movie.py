@@ -24,7 +24,32 @@ class ContentScoreSchema(BaseModel):
 
 
 class MovieSchema(BaseModel):
-    """Movie response schema"""
+    """Movie response schema for search results"""
+    id: UUID
+    title: str
+    year: int
+    runtime: Optional[int]
+    genre: List[str]
+    mpaa_rating: Optional[str]
+    director: Optional[str]
+    cast: List[str]
+    poster_url: Optional[str]
+    imdb_rating: Optional[float]
+    rt_rating: Optional[int]
+    metacritic_rating: Optional[int]
+    awards_summary: Optional[str]
+    awards_count: int
+    nominations_count: int
+    omdb_id: str
+    source: str
+    content_score: Optional[ContentScoreSchema] = None
+    
+    class Config:
+        from_attributes = True  # Allow ORM model conversion
+
+
+class MovieDetailSchema(BaseModel):
+    """Full movie detail schema including plot, awards metadata, and timestamps"""
     id: UUID
     title: str
     year: int

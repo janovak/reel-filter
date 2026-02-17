@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 from src.database.session import init_db
 from src.api.middleware.error_handler import error_handler_middleware
 from src.api.middleware.logging import logging_middleware
+from src.api.middleware.performance import performance_middleware
 from src.api.routes import movies, metadata, health
 
 
@@ -43,6 +44,7 @@ app.add_middleware(
 )
 
 # Custom middleware
+app.middleware("http")(performance_middleware)
 app.middleware("http")(logging_middleware)
 app.middleware("http")(error_handler_middleware)
 

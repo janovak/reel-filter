@@ -1,352 +1,154 @@
-# Reel-Filter - Movie Content-Aware Search
+# Reel-Filter — Movie Content-Aware Search
 
-A web application that enables users to search and filter movies based on both traditional criteria (genre, ratings, year, awards) and granular content tolerance thresholds (sex/nudity, violence/gore, language/profanity on a 0-10 scale).
+A web application for searching and filtering movies based on **content tolerance thresholds** (sex/nudity, violence/gore, language/profanity on a 0-10 scale) alongside traditional criteria (genre, ratings, year, awards).
 
-## 🎯 Current Status: MVP Complete
+## ✅ Features
 
-**Phase 1-3 Complete** - Core content filtering feature is fully functional!
-
-### What's Working
-- ✅ Content tolerance threshold filtering (0-10 scale for sex, violence, language)
-- ✅ Color-coded content badges (green=safe, red=exceeds threshold)
-- ✅ Movie search with pagination
-- ✅ Session-based filter persistence
-- ✅ Responsive UI with Tailwind CSS
-- ✅ FastAPI backend with PostgreSQL
-- ✅ React 18+ TypeScript frontend
-
-### MVP Features
-Users can:
-1. Set personal content tolerance thresholds
-2. Search movies that match their comfort levels
-3. See visual indicators (color-coded badges) for content levels
-4. Browse results with pagination (20-30 movies per page)
-5. Have filters persist during their session
-
----
+- **Content filtering**: Set personal tolerance levels (0-10) for sex, violence, and language — only see movies within your limits
+- **Traditional search**: Filter by title, genre, year range, MPAA rating, and minimum quality ratings (IMDb, Rotten Tomatoes, Metacritic)
+- **Awards filtering**: Filter by minimum number of awards won
+- **Movie detail pages**: Full metadata, plot, cast, all rating sources, awards, and visual content score bars
+- **Color-coded badges**: Green (within threshold), red (exceeds), gray (no limit set)
+- **Mobile responsive**: Collapsible filter drawer, touch-friendly controls (44px targets), responsive grid
+- **Session persistence**: Filters persist during your browser session
+- **Health monitoring**: `/api/health` endpoint with database and refresh status
+- **Performance logging**: Slow query warnings (>500ms), request timing headers
+- **Data integration**: OMDb API client, Kids-in-Mind scraper, RapidFuzz matching, Celery weekly refresh
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Python 3.11+
-- Node.js 18+
-- Docker & Docker Compose (for database)
-- OMDb API key (get free at http://www.omdbapi.com/)
+- Docker & Docker Compose
+- (Optional) Python 3.11+ and Node.js 18+ for local development
 
-### 1. Clone and Setup
+### Using Docker Compose (recommended)
 
 ```bash
 git clone <repository-url>
 cd reel-filter
+
+# Create environment file
+cp backend/.env.example backend/.env
+# Edit backend/.env and set your OMDB_API_KEY
+
+# Start all services
+docker-compose up -d
+
+# Seed sample data
+docker-compose exec backend python scripts/manual_refresh.py --seed
 ```
 
-### 2. Backend Setup
+Services:
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8000
+- API Docs: http://localhost:8000/docs
+- Health: http://localhost:8000/api/health
 
+### Local Development
+
+**Backend:**
 ```bash
-# Create virtual environment
 cd backend
 python -m venv venv
-
-# Activate (Windows)
-.\venv\Scripts\activate
-# Activate (Linux/Mac)
-source venv/bin/activate
-
-# Install dependencies
+source venv/bin/activate  # or .\venv\Scripts\activate on Windows
 pip install -r requirements.txt
-
-# Configure environment
 cp .env.example .env
-# Edit .env and add your OMDb API key
+# Start PostgreSQL and Redis via Docker
+docker-compose up -d db redis
+python src/main.py
 ```
 
-### 3. Frontend Setup
-
+**Frontend:**
 ```bash
 cd frontend
 npm install
-
-# Configure environment
 cp .env.example .env
-# Defaults should work for local development
-```
-
-### 4. Database Setup
-
-```bash
-# Start PostgreSQL and Redis
-docker-compose up -d db redis
-
-# Wait for database to be ready
-docker-compose ps
-
-# Run migrations
-cd backend
-alembic upgrade head
-```
-
-### 5. Seed Test Data (Optional)
-
-```bash
-# Create seed script (see backend/scripts/seed_test_data.py)
-cd backend
-python scripts/seed_test_data.py
-```
-
-### 6. Start Services
-
-**Terminal 1 - Backend:**
-```bash
-cd backend
-python src/main.py
-# API available at http://localhost:8000
-# API docs at http://localhost:8000/docs
-```
-
-**Terminal 2 - Frontend:**
-```bash
-cd frontend
 npm run dev
-# App available at http://localhost:3000
 ```
 
-### 7. Test the Application
-
-1. Open http://localhost:3000
-2. Set content thresholds using the sliders
-3. Search for movies (once you have seed data)
-4. See color-coded badges indicating content levels
-
----
+**Seed test data:**
+```bash
+cd backend
+python scripts/manual_refresh.py --seed
+```
 
 ## 📁 Project Structure
 
 ```
 reel-filter/
-├── backend/                 # Python FastAPI backend
+├── backend/
 │   ├── src/
-│   │   ├── api/            # API routes and schemas
-│   │   ├── database/       # Database connection and models
-│   │   ├── models/         # SQLAlchemy ORM models
-│   │   ├── services/       # Business logic
-│   │   └── main.py         # FastAPI app entry point
-│   ├── alembic/            # Database migrations
-│   ├── requirements.txt    # Python dependencies
-│   └── pyproject.toml      # Python project config
-├── frontend/               # React TypeScript frontend
+│   │   ├── api/
+│   │   │   ├── routes/         # movies, metadata, health endpoints
+│   │   │   ├── schemas/        # Pydantic request/response models
+│   │   │   └── middleware/     # error handling, logging, performance
+│   │   ├── database/           # SQLAlchemy engine, session, base
+│   │   ├── models/             # Movie, ContentScore, DataRefreshLog
+│   │   ├── services/           # SearchService, MovieService, MatchingService
+│   │   ├── integrations/       # OMDb client, KIM scraper
+│   │   ├── jobs/               # Celery app, weekly refresh tasks
+│   │   └── main.py
+│   ├── scripts/                # seed_test_data, manual_refresh
+│   └── requirements.txt
+├── frontend/
 │   ├── src/
-│   │   ├── components/     # Reusable UI components
-│   │   ├── pages/          # Page components
-│   │   ├── services/       # API client
-│   │   ├── hooks/          # Custom React hooks
-│   │   ├── types/          # TypeScript type definitions
-│   │   └── styles/         # Tailwind CSS
-│   ├── package.json        # Node dependencies
-│   └── vite.config.ts      # Vite bundler config
-├── shared/
-│   └── contracts/          # API contracts (OpenAPI)
-├── specs/                  # Feature specifications
-└── docker-compose.yml      # Docker services config
+│   │   ├── components/         # SearchBar, FilterPanel, MovieCard, ContentBadge,
+│   │   │                       # LoadingSpinner, ErrorBoundary, ScoreLegend
+│   │   ├── pages/              # SearchPage, MovieDetail
+│   │   ├── services/           # API client with error handling
+│   │   ├── hooks/              # useFilters (session storage)
+│   │   └── types/              # TypeScript interfaces
+│   └── package.json
+├── specs/                      # Feature specifications and contracts
+├── docker-compose.yml
+└── README.md
 ```
 
----
+## 🔧 Tech Stack
 
-## 🔧 Technology Stack
+| Layer | Technology |
+|-------|-----------|
+| Backend | Python 3.11+, FastAPI, SQLAlchemy 2.0, Pydantic |
+| Database | PostgreSQL 15 (GIN indexes, ARRAY, JSONB, full-text search) |
+| Task Queue | Celery + Redis 7 |
+| Frontend | React 18, TypeScript, Tailwind CSS 3, Vite 5 |
+| HTTP | Axios (frontend), httpx (backend) |
+| Scraping | BeautifulSoup4 + lxml |
+| Matching | RapidFuzz (>88% auto, 75-88% review queue) |
+| Retry | tenacity (exponential backoff) |
 
-### Backend
-- **Framework:** FastAPI 0.109+
-- **Database:** PostgreSQL 15+ with SQLAlchemy 2.0+
-- **Task Queue:** Celery + Redis
-- **Web Scraping:** BeautifulSoup4 + lxml
-- **Fuzzy Matching:** RapidFuzz
-- **Testing:** pytest, responses, httpx-mock
+## 📊 API Endpoints
 
-### Frontend
-- **Framework:** React 18.2+ with TypeScript
-- **Routing:** React Router 6+
-- **Styling:** Tailwind CSS 3+
-- **HTTP Client:** Axios
-- **Build Tool:** Vite 5+
-- **Testing:** Vitest, React Testing Library, Playwright
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/movies/search` | Search with filters (content, genre, year, ratings, awards) |
+| GET | `/api/movies/{id}` | Full movie details with content scores |
+| GET | `/api/genres` | List available genres |
+| GET | `/api/health` | Health check (DB status, last refresh) |
 
-### Infrastructure
-- **Containerization:** Docker & Docker Compose
-- **Database Migrations:** Alembic
-- **API Documentation:** OpenAPI 3.0 (auto-generated by FastAPI)
-
----
-
-## 📊 Database Schema
-
-### Movies Table
-- Comprehensive metadata (title, year, genre, ratings, awards)
-- Poster URLs, plot summaries, cast information
-- Multiple rating sources (IMDb, Rotten Tomatoes, Metacritic)
-- Full-text search indexes on title
-- Array indexes on genres
-
-### Content Scores Table
-- 0-10 scale ratings for three categories:
-  - Sex/Nudity
-  - Violence/Gore
-  - Language/Profanity
-- Source tracking (Kids-in-Mind)
-- Fuzzy matching confidence scores
-- Composite indexes for fast filtering
-
-### Data Refresh Logs Table
-- Operational tracking for weekly data refresh
-- Error logging and performance metrics
-- Success/failure status
-
----
-
-## 🎨 UI Components
-
-### ContentBadge
-- Color-coded badges (green/red/gray)
-- Shows content score vs. user threshold
-- Used throughout the application
-
-### FilterPanel
-- Content threshold sliders (0-10)
-- "Show all" checkboxes for "any" threshold
-- Reset button
-- Session persistence
-
-### MovieCard
-- Movie poster with lazy loading
-- Title, year, MPAA rating
-- Multiple ratings display
-- Content badges with threshold comparison
-- Hover effects
-
-### SearchPage
-- Search bar for title search
-- Sidebar with FilterPanel
-- Results grid (responsive)
-- Pagination controls
-- Loading/error/empty states
-
----
+**Search parameters:** `q`, `genres[]`, `year_min`, `year_max`, `mpaa_ratings[]`, `imdb_min`, `rt_min`, `metacritic_min`, `awards_min`, `sex_max`, `violence_max`, `language_max`, `page`, `per_page`
 
 ## 🔐 Environment Variables
 
-### Backend (.env)
-```env
-DATABASE_URL=postgresql://user:password@localhost:5432/reel_filter
-REDIS_URL=redis://localhost:6379/0
-OMDB_API_KEY=your_api_key_here
-CORS_ORIGINS=http://localhost:3000
-DEBUG=true
-```
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DATABASE_URL` | `postgresql://...@localhost:5432/reel_filter` | PostgreSQL connection |
+| `REDIS_URL` | `redis://localhost:6379/0` | Redis for Celery |
+| `OMDB_API_KEY` | — | OMDb API key (required for data refresh) |
+| `CORS_ORIGINS` | `http://localhost:3000,http://localhost:5173` | Allowed origins |
+| `VITE_API_BASE_URL` | `http://localhost:8000/api` | Frontend API URL |
 
-### Frontend (.env)
-```env
-VITE_API_BASE_URL=http://localhost:8000/api
-VITE_ENVIRONMENT=development
-```
+## 📝 Content Score Scale
 
----
-
-## 📝 API Endpoints
-
-### Movies
-- `GET /api/movies/search` - Search and filter movies
-  - Query params: q, genres, year_min/max, ratings, content thresholds
-  - Returns: Paginated movie list with content scores
-- `GET /api/movies/{id}` - Get single movie details
-
-### Metadata (Coming Soon)
-- `GET /api/genres` - Get list of available genres
-
-### Health (Coming Soon)
-- `GET /api/health` - Health check with database status
-
----
-
-## 🧪 Testing
-
-### Backend
-```bash
-cd backend
-pytest tests/ -v --cov=src
-```
-
-### Frontend
-```bash
-cd frontend
-npm test                # Unit tests
-npm run test:ui         # Test UI
-npm run test:e2e        # End-to-end tests
-```
-
----
-
-## 📅 Development Roadmap
-
-### ✅ Phase 1: Setup (Complete)
-- Project structure, dependencies, Docker
-
-### ✅ Phase 2: Foundational (Complete)
-- Database models, API foundation, React setup
-
-### ✅ Phase 3: User Story 1 - MVP (Complete)
-- Content-filtered movie browsing
-- Core differentiator feature
-
-### 🔄 Phase 4: User Story 2 (Planned)
-- Traditional search and discovery
-- Genre/year/rating filters
-
-### 🔄 Phase 5: User Story 3 (Planned)
-- Detailed movie information pages
-
-### 🔄 Phase 6: User Story 4 (Planned)
-- Mobile-responsive experience
-
-### 🔄 Phase 7: Data Integration (Planned)
-- OMDb API integration
-- Kids-in-Mind web scraping
-- Weekly automated refresh
-
-### 🔄 Phase 8: Health & Monitoring (Planned)
-- Health check endpoints
-- Performance logging
-
-### 🔄 Phase 9: Polish (Planned)
-- Error boundaries, loading spinners
-- Performance optimization
-- Documentation
-
----
-
-## 🤝 Contributing
-
-This project is currently in MVP development phase. Contributions welcome after initial release!
-
----
+| Score | Label | Color |
+|-------|-------|-------|
+| 0 | None | Gray |
+| 1–2 | Mild | Green |
+| 3–4 | Moderate | Yellow |
+| 5–6 | Strong | Orange |
+| 7–8 | Intense | Red |
+| 9–10 | Extreme | Dark Red |
 
 ## 📄 License
 
 [Your License Here]
-
----
-
-## 🙏 Acknowledgments
-
-- OMDb API for movie metadata
-- Kids-in-Mind for content ratings
-- The FastAPI and React communities
-
----
-
-## 📞 Support
-
-For issues, questions, or feature requests, please open an issue on GitHub.
-
----
-
-**Last Updated:** 2025-01-23
-**Version:** 1.0.0-MVP
-**Status:** Core content filtering feature complete and ready for testing

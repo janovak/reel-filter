@@ -1,16 +1,25 @@
 # Python
 __pycache__/
 *.py[cod]
+*$py.class
 venv/
 .venv/
 *.egg-info/
+dist/
+build/
 
 # Node
 node_modules/
+dist/
 
 # IDE
+.vscode/
 .idea/
+*.swp
+*.swo
+*~
 .DS_Store
+Thumbs.db
 
 # Environment
 .env
@@ -20,6 +29,19 @@ node_modules/
 # Testing
 .pytest_cache/
 coverage/
+htmlcov/
+.coverage
 
 # Logs
 *.log
+
+# Database
+*.db
+*.sqlite
+
+# Docker
+*.tmp
+
+# OS
+.DS_Store
+Thumbs.db
