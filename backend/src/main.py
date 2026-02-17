@@ -14,12 +14,9 @@ from src.api.routes import movies, metadata, health
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: Initialize database
-    print("🚀 Starting up Reel-Filter API...")
+    import src.models  # noqa: F401 - register models with Base.metadata
     init_db()
-    print("✓ Database initialized")
     yield
-    # Shutdown
-    print("👋 Shutting down Reel-Filter API...")
 
 
 # Create FastAPI application

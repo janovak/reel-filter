@@ -98,12 +98,12 @@ class SearchService:
         # Get total count before pagination
         total = query.count()
         
+        # Order by IMDb rating (highest first), then by year (newest first)
+        query = query.order_by(Movie.imdb_rating.desc().nullslast(), Movie.year.desc())
+        
         # Apply pagination
         offset = (filters.page - 1) * filters.per_page
         query = query.offset(offset).limit(filters.per_page)
-        
-        # Order by IMDb rating (highest first), then by year (newest first)
-        query = query.order_by(Movie.imdb_rating.desc().nullslast(), Movie.year.desc())
         
         # Execute query
         movies = query.all()
