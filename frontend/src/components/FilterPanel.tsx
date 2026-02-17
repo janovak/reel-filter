@@ -4,9 +4,59 @@
  * Mobile responsive with collapsible sections
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { SearchFilters, MPAA_RATINGS, GENRES } from '../types/api.types'
 import apiClient from '../services/api'
+
+/**
+ * Reusable range slider that tracks drag locally and only commits on release.
+ */
+const RangeSlider = ({
+  label, min, max, step, value, displayValue, onCommit, color, accent, ticks, disabled,
+}: {
+  label: string; min: number; max: number; step: number; value: number
+  displayValue: (v: number) => string; onCommit: (v: number) => void
+  color: string; accent: string; ticks?: string[]; disabled?: boolean
+}) => {
+  const [local, setLocal] = useState(value)
+  const dragging = useRef(false)
+
+  useEffect(() => {
+    if (!dragging.current) setLocal(value)
+  }, [value])
+
+  const shown = dragging.current ? local : value
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-1">
+        <label className="text-sm font-medium text-gray-700">{label}</label>
+        <span className={`text-sm font-bold ${color}`}>{displayValue(shown)}</span>
+      </div>
+      <input
+        type="range" min={min} max={max} step={step} value={shown}
+        onPointerDown={() => { dragging.current = true }}
+        onInput={(e) => {
+          const v = parseFloat((e.target as HTMLInputElement).value)
+          setLocal(v)
+        }}
+        onPointerUp={(e) => {
+          dragging.current = false
+          onCommit(parseFloat((e.target as HTMLInputElement).value))
+        }}
+        onChange={() => {}} // Controlled input — commit handled by onPointerUp
+        disabled={disabled}
+        className={`w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer ${accent}
+                    ${disabled ? 'opacity-40 cursor-not-allowed' : ''}`}
+      />
+      {ticks && (
+        <div className="flex justify-between text-xs text-gray-400 mt-1">
+          {ticks.map((t) => <span key={t}>{t}</span>)}
+        </div>
+      )}
+    </div>
+  )
+}
 
 interface FilterPanelProps {
   filters: SearchFilters
@@ -117,7 +167,7 @@ const FilterPanel = ({ filters, onFilterChange, onReset, onApply }: FilterPanelP
     </div>
   )
 
-  // Content threshold control
+  // Content threshold control with local state during drag
   const ContentThresholdControl = ({
     label,
     filterKey,
@@ -128,42 +178,34 @@ const FilterPanel = ({ filters, onFilterChange, onReset, onApply }: FilterPanelP
     filterKey: 'sex_max' | 'violence_max' | 'language_max'
     value: number | null | undefined
     color: string
-  }) => (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <label className="text-sm font-medium text-gray-700">{label}</label>
-        <span className={`text-sm font-bold ${isAnySelected(value) ? 'text-gray-400' : color}`}>
-          {isAnySelected(value) ? 'Any' : `≤ ${value}`}
-        </span>
-      </div>
+  }) => {
+    const anySelected = isAnySelected(value)
 
-      <div className="flex items-center gap-3">
-        <span className="text-xs text-gray-400 w-3">0</span>
-        <input
-          type="range"
-          min="0"
-          max="10"
-          step="1"
-          value={isAnySelected(value) ? 5 : (value ?? 5)}
-          onChange={(e) => handleContentSliderChange(filterKey, e.target.value)}
-          disabled={isAnySelected(value)}
-          className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer
-                     accent-brand-primary disabled:opacity-40 disabled:cursor-not-allowed"
+    return (
+      <div className="space-y-2">
+        <RangeSlider
+          label={label}
+          min={0} max={10} step={1}
+          value={anySelected ? 5 : (value ?? 5)}
+          displayValue={(v) => anySelected ? 'Any' : `≤ ${v}`}
+          onCommit={(v) => handleContentSliderChange(filterKey, String(v))}
+          color={anySelected ? 'text-gray-400' : color}
+          accent="accent-brand-primary"
+          disabled={anySelected}
         />
-        <span className="text-xs text-gray-400 w-4">10</span>
-      </div>
 
-      <label className="flex items-center gap-2 text-sm cursor-pointer min-h-[44px] md:min-h-0">
-        <input
-          type="checkbox"
-          checked={isAnySelected(value)}
-          onChange={(e) => handleAnyCheckboxChange(filterKey, e.target.checked)}
-          className="w-4 h-4 rounded border-gray-300 text-brand-primary focus:ring-brand-primary cursor-pointer"
-        />
-        <span className="text-gray-600">No limit</span>
-      </label>
-    </div>
-  )
+        <label className="flex items-center gap-2 text-sm cursor-pointer min-h-[44px] md:min-h-0">
+          <input
+            type="checkbox"
+            checked={anySelected}
+            onChange={(e) => handleAnyCheckboxChange(filterKey, e.target.checked)}
+            className="w-4 h-4 rounded border-gray-300 text-brand-primary focus:ring-brand-primary cursor-pointer"
+          />
+          <span className="text-gray-600">No limit</span>
+        </label>
+      </div>
+    )
+  }
 
   // Count active filters
   const activeContentFilters = [filters.sex_max, filters.violence_max, filters.language_max].filter(
@@ -333,76 +375,37 @@ const FilterPanel = ({ filters, onFilterChange, onReset, onApply }: FilterPanelP
           badge={activeQualityFilters}
         >
           {/* IMDb Minimum */}
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="text-sm font-medium text-gray-700">IMDb Rating</label>
-              <span className="text-sm font-bold text-yellow-600">
-                {filters.imdb_min && filters.imdb_min > 0 ? `≥ ${filters.imdb_min}` : 'Any'}
-              </span>
-            </div>
-            <input
-              type="range"
-              min="0"
-              max="10"
-              step="0.5"
-              value={filters.imdb_min ?? 0}
-              onChange={(e) => onFilterChange('imdb_min', parseFloat(e.target.value) || undefined)}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-yellow-500"
-            />
-            <div className="flex justify-between text-xs text-gray-400 mt-1">
-              <span>0</span>
-              <span>5</span>
-              <span>10</span>
-            </div>
-          </div>
+          <RangeSlider
+            label="IMDb Rating"
+            min={0} max={10} step={0.5}
+            value={filters.imdb_min ?? 0}
+            displayValue={(v) => v > 0 ? `≥ ${v}` : 'Any'}
+            onCommit={(v) => onFilterChange('imdb_min', v > 0 ? v : undefined)}
+            color="text-yellow-600" accent="accent-yellow-500"
+            ticks={['0', '5', '10']}
+          />
 
           {/* Rotten Tomatoes Minimum */}
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="text-sm font-medium text-gray-700">Rotten Tomatoes</label>
-              <span className="text-sm font-bold text-red-600">
-                {filters.rt_min && filters.rt_min > 0 ? `≥ ${filters.rt_min}%` : 'Any'}
-              </span>
-            </div>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              step="5"
-              value={filters.rt_min ?? 0}
-              onChange={(e) => onFilterChange('rt_min', parseInt(e.target.value) || undefined)}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-red-500"
-            />
-            <div className="flex justify-between text-xs text-gray-400 mt-1">
-              <span>0%</span>
-              <span>50%</span>
-              <span>100%</span>
-            </div>
-          </div>
+          <RangeSlider
+            label="Rotten Tomatoes"
+            min={0} max={100} step={5}
+            value={filters.rt_min ?? 0}
+            displayValue={(v) => v > 0 ? `≥ ${v}%` : 'Any'}
+            onCommit={(v) => onFilterChange('rt_min', v > 0 ? v : undefined)}
+            color="text-red-600" accent="accent-red-500"
+            ticks={['0%', '50%', '100%']}
+          />
 
           {/* Metacritic Minimum */}
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="text-sm font-medium text-gray-700">Metacritic</label>
-              <span className="text-sm font-bold text-green-600">
-                {filters.metacritic_min && filters.metacritic_min > 0 ? `≥ ${filters.metacritic_min}` : 'Any'}
-              </span>
-            </div>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              step="5"
-              value={filters.metacritic_min ?? 0}
-              onChange={(e) => onFilterChange('metacritic_min', parseInt(e.target.value) || undefined)}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-green-500"
-            />
-            <div className="flex justify-between text-xs text-gray-400 mt-1">
-              <span>0</span>
-              <span>50</span>
-              <span>100</span>
-            </div>
-          </div>
+          <RangeSlider
+            label="Metacritic"
+            min={0} max={100} step={5}
+            value={filters.metacritic_min ?? 0}
+            displayValue={(v) => v > 0 ? `≥ ${v}` : 'Any'}
+            onCommit={(v) => onFilterChange('metacritic_min', v > 0 ? v : undefined)}
+            color="text-green-600" accent="accent-green-500"
+            ticks={['0', '50', '100']}
+          />
         </Section>
 
         {/* Apply Button (mobile) */}
