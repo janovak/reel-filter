@@ -1,0 +1,672 @@
+openapi: 3.0.3
+info:
+  title: Reel-Filter Movie Search API
+  description: |
+    REST API for movie content-aware search application. Enables users to search and filter movies based on traditional criteria (genre, ratings, year, awards) and granular content tolerance thresholds (sex/nudity, violence/gore, language/profanity).
+    
+    Data sources:
+    - OMDb API (movie metadata)
+    - Kids-in-Mind (content scores)
+  version: 1.0.0
+  contact:
+    name: Reel-Filter API Support
+    email: support@reel-filter.example.com
+
+servers:
+  - url: http://localhost:8000/api
+    description: Local development server
+  - url: https://api.reel-filter.example.com/api
+    description: Production server
+
+tags:
+  - name: movies
+    description: Movie search and retrieval operations
+  - name: metadata
+    description: Metadata and filter options
+  - name: health
+    description: Health check and monitoring
+
+paths:
+  /movies/search:
+    get:
+      summary: Search and filter movies
+      description: |
+        Search movies by title and apply traditional filters (genre, year, ratings, awards) and content tolerance filters (sex, violence, language).
+        
+        **Content Filtering Logic**:
+        - When ANY content threshold is set (not null), only movies WITH content scores are returned
+        - When ALL content thresholds are null, all movies are returned (with or without content scores)
+        - Movies exceeding ANY threshold are filtered out
+        
+        **Pagination**: Returns 20-30 movies per page with pagination metadata
+      operationId: searchMovies
+      tags:
+        - movies
+      parameters:
+        # Text search
+        - name: q
+          in: query
+          description: Movie title search (partial or complete match)
+          schema:
+            type: string
+            example: "matrix"
+        
+        # Traditional filters
+        - name: genres
+          in: query
+          description: Filter by genre(s) (multiple allowed)
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - Action
+                - Adventure
+                - Animation
+                - Biography
+                - Comedy
+                - Crime
+                - Documentary
+                - Drama
+                - Family
+                - Fantasy
+                - History
+                - Horror
+                - Music
+                - Musical
+                - Mystery
+                - Romance
+                - Sci-Fi
+                - Sport
+                - Thriller
+                - War
+                - Western
+            example: ["Action", "Sci-Fi"]
+          explode: true
+        
+        - name: year_min
+          in: query
+          description: Minimum release year
+          schema:
+            type: integer
+            minimum: 1888
+            maximum: 2100
+            example: 1990
+        
+        - name: year_max
+          in: query
+          description: Maximum release year
+          schema:
+            type: integer
+            minimum: 1888
+            maximum: 2100
+            example: 2010
+        
+        - name: mpaa_ratings
+          in: query
+          description: Filter by MPAA rating(s) (multiple allowed)
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - G
+                - PG
+                - PG-13
+                - R
+                - NC-17
+                - Not Rated
+            example: ["PG-13", "R"]
+          explode: true
+        
+        - name: imdb_min
+          in: query
+          description: Minimum IMDb rating (0-10)
+          schema:
+            type: number
+            format: float
+            minimum: 0
+            maximum: 10
+            example: 7.0
+        
+        - name: rt_min
+          in: query
+          description: Minimum Rotten Tomatoes percentage (0-100)
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 100
+            example: 75
+        
+        - name: metacritic_min
+          in: query
+          description: Minimum Metacritic score (0-100)
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 100
+            example: 70
+        
+        - name: awards_min
+          in: query
+          description: Minimum number of awards won
+          schema:
+            type: integer
+            minimum: 0
+            example: 1
+        
+        # Content threshold filters
+        - name: sex_max
+          in: query
+          description: |
+            Maximum sex/nudity content level (0-10). 
+            Omit parameter for no limit ("any"). When set, only movies WITH content scores
+            and sex_nudity <= sex_max are returned. Movies without content scores are hidden.
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 10
+            nullable: true
+            example: 5
+        
+        - name: violence_max
+          in: query
+          description: |
+            Maximum violence/gore content level (0-10).
+            Omit parameter for no limit ("any"). When set, only movies WITH content scores
+            and violence_gore <= violence_max are returned. Movies without content scores are hidden.
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 10
+            nullable: true
+            example: 6
+        
+        - name: language_max
+          in: query
+          description: |
+            Maximum language/profanity content level (0-10).
+            Omit parameter for no limit ("any"). When set, only movies WITH content scores
+            and language_profanity <= language_max are returned. Movies without content scores are hidden.
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 10
+            nullable: true
+            example: 7
+        
+        # Pagination
+        - name: page
+          in: query
+          description: Page number (1-indexed)
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+            example: 1
+        
+        - name: per_page
+          in: query
+          description: Results per page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 30
+            example: 30
+      
+      responses:
+        '200':
+          description: Successful search operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+        
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                invalidYear:
+                  value:
+                    error: "Invalid year range"
+                    message: "year_min must be less than or equal to year_max"
+                invalidRating:
+                  value:
+                    error: "Invalid rating"
+                    message: "imdb_min must be between 0 and 10"
+        
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /movies/{id}:
+    get:
+      summary: Get movie details by ID
+      description: |
+        Retrieve comprehensive movie details including all metadata, ratings, awards, and content scores (if available).
+      operationId: getMovieById
+      tags:
+        - movies
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Movie UUID
+          schema:
+            type: string
+            format: uuid
+            example: "a1b2c3d4-e5f6-4789-0abc-def123456789"
+      
+      responses:
+        '200':
+          description: Movie found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovieDetail'
+        
+        '404':
+          description: Movie not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Movie not found"
+                message: "No movie exists with ID: a1b2c3d4-e5f6-4789-0abc-def123456789"
+        
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /genres:
+    get:
+      summary: Get available genres
+      description: |
+        Retrieve list of all available movie genres for populating filter dropdowns.
+      operationId: getGenres
+      tags:
+        - metadata
+      
+      responses:
+        '200':
+          description: List of genres
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  genres:
+                    type: array
+                    items:
+                      type: string
+                    example:
+                      - Action
+                      - Adventure
+                      - Animation
+                      - Comedy
+                      - Drama
+                      - Horror
+                      - Sci-Fi
+                      - Thriller
+
+  /health:
+    get:
+      summary: Health check
+      description: |
+        Check API health status, database connectivity, and last data refresh timestamp.
+      operationId: healthCheck
+      tags:
+        - health
+      
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        
+        '503':
+          description: Service unavailable (database down)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    Movie:
+      type: object
+      required:
+        - id
+        - title
+        - year
+        - omdb_id
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique movie identifier
+          example: "a1b2c3d4-e5f6-4789-0abc-def123456789"
+        
+        title:
+          type: string
+          maxLength: 255
+          description: Movie title
+          example: "The Matrix"
+        
+        year:
+          type: integer
+          minimum: 1888
+          maximum: 2100
+          description: Release year
+          example: 1999
+        
+        runtime:
+          type: integer
+          nullable: true
+          description: Runtime in minutes
+          example: 136
+        
+        genre:
+          type: array
+          items:
+            type: string
+          description: Array of genres
+          example: ["Action", "Sci-Fi"]
+        
+        mpaa_rating:
+          type: string
+          enum:
+            - G
+            - PG
+            - PG-13
+            - R
+            - NC-17
+            - Not Rated
+          nullable: true
+          description: MPAA content rating
+          example: "R"
+        
+        director:
+          type: string
+          nullable: true
+          maxLength: 255
+          description: Director name
+          example: "Lana Wachowski, Lilly Wachowski"
+        
+        cast:
+          type: array
+          items:
+            type: string
+          description: Primary cast members
+          example: ["Keanu Reeves", "Laurence Fishburne", "Carrie-Anne Moss"]
+        
+        poster_url:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 500
+          description: URL to poster image
+          example: "https://m.media-amazon.com/images/M/MV5BNzQzOTk3OTAtNDQ0Zi00ZTVkLWI0MTEtMDllZjNkYzNjNTc4L2ltYWdlXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_SX300.jpg"
+        
+        imdb_rating:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 10
+          nullable: true
+          description: IMDb rating (0-10)
+          example: 8.7
+        
+        rt_rating:
+          type: integer
+          minimum: 0
+          maximum: 100
+          nullable: true
+          description: Rotten Tomatoes percentage (0-100)
+          example: 87
+        
+        metacritic_rating:
+          type: integer
+          minimum: 0
+          maximum: 100
+          nullable: true
+          description: Metacritic score (0-100)
+          example: 73
+        
+        awards_summary:
+          type: string
+          nullable: true
+          description: Awards description
+          example: "Won 4 Oscars. 42 wins & 51 nominations total"
+        
+        awards_count:
+          type: integer
+          minimum: 0
+          description: Total number of awards won
+          example: 42
+        
+        nominations_count:
+          type: integer
+          minimum: 0
+          description: Total number of nominations
+          example: 51
+        
+        omdb_id:
+          type: string
+          maxLength: 50
+          description: OMDb API identifier
+          example: "tt0133093"
+        
+        content_score:
+          $ref: '#/components/schemas/ContentScore'
+          nullable: true
+          description: Content scores (null if unavailable)
+    
+    MovieDetail:
+      allOf:
+        - $ref: '#/components/schemas/Movie'
+        - type: object
+          properties:
+            plot:
+              type: string
+              nullable: true
+              description: Full plot summary
+              example: "A computer hacker learns from mysterious rebels about the true nature of his reality and his role in the war against its controllers."
+            
+            awards_metadata:
+              type: object
+              nullable: true
+              description: Detailed awards data
+              additionalProperties: true
+              example:
+                oscars:
+                  - "Best Visual Effects"
+                  - "Best Film Editing"
+                  - "Best Sound"
+                  - "Best Sound Effects Editing"
+                bafta:
+                  - "Best Achievement in Special Visual Effects"
+                saturn:
+                  - "Best Science Fiction Film"
+            
+            created_at:
+              type: string
+              format: date-time
+              description: Record creation timestamp
+              example: "2025-01-20T10:30:00Z"
+            
+            updated_at:
+              type: string
+              format: date-time
+              description: Last update timestamp
+              example: "2025-01-23T02:15:00Z"
+    
+    ContentScore:
+      type: object
+      required:
+        - sex_nudity
+        - violence_gore
+        - language_profanity
+      properties:
+        sex_nudity:
+          type: integer
+          minimum: 0
+          maximum: 10
+          description: Sex/nudity content level (0-10)
+          example: 3
+        
+        violence_gore:
+          type: integer
+          minimum: 0
+          maximum: 10
+          description: Violence/gore content level (0-10)
+          example: 8
+        
+        language_profanity:
+          type: integer
+          minimum: 0
+          maximum: 10
+          description: Language/profanity content level (0-10)
+          example: 5
+        
+        source:
+          type: string
+          description: Data source identifier
+          example: "kids-in-mind"
+        
+        scraped_at:
+          type: string
+          format: date-time
+          description: When content scores were scraped
+          example: "2025-01-20T11:00:00Z"
+    
+    SearchResponse:
+      type: object
+      required:
+        - movies
+        - pagination
+      properties:
+        movies:
+          type: array
+          items:
+            $ref: '#/components/schemas/Movie'
+          description: Array of matching movies
+        
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    
+    Pagination:
+      type: object
+      required:
+        - page
+        - per_page
+        - total
+        - has_next
+        - has_prev
+      properties:
+        page:
+          type: integer
+          minimum: 1
+          description: Current page number (1-indexed)
+          example: 1
+        
+        per_page:
+          type: integer
+          minimum: 1
+          maximum: 100
+          description: Results per page
+          example: 30
+        
+        total:
+          type: integer
+          minimum: 0
+          description: Total number of matching movies
+          example: 487
+        
+        total_pages:
+          type: integer
+          minimum: 0
+          description: Total number of pages
+          example: 17
+        
+        has_next:
+          type: boolean
+          description: Whether next page exists
+          example: true
+        
+        has_prev:
+          type: boolean
+          description: Whether previous page exists
+          example: false
+    
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - database
+      properties:
+        status:
+          type: string
+          enum:
+            - healthy
+            - degraded
+          description: Overall service health
+          example: "healthy"
+        
+        database:
+          type: string
+          enum:
+            - connected
+            - disconnected
+          description: Database connectivity status
+          example: "connected"
+        
+        last_refresh:
+          type: object
+          nullable: true
+          description: Last data refresh details
+          properties:
+            omdb:
+              type: string
+              format: date-time
+              example: "2025-01-23T02:00:00Z"
+            
+            kids_in_mind:
+              type: string
+              format: date-time
+              example: "2025-01-23T03:12:00Z"
+    
+    Error:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error type/code
+          example: "Invalid parameter"
+        
+        message:
+          type: string
+          description: Human-readable error message
+          example: "The 'imdb_min' parameter must be between 0 and 10"
+        
+        details:
+          type: object
+          nullable: true
+          description: Additional error context
+          additionalProperties: true
