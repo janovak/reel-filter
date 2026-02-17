@@ -1,0 +1,117 @@
+version: '3.8'
+
+services:
+  # PostgreSQL 15+ database
+  db:
+    image: postgres:15-alpine
+    container_name: reel-filter-db
+    environment:
+      POSTGRES_DB: reel_filter
+      POSTGRES_USER: reel_filter_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-dev_password_change_in_production}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U reel_filter_user -d reel_filter"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis 7+ for Celery task queue
+  redis:
+    image: redis:7-alpine
+    container_name: reel-filter-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # FastAPI backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: reel-filter-backend
+    environment:
+      DATABASE_URL: postgresql://reel_filter_user:${DB_PASSWORD:-dev_password_change_in_production}@db:5432/reel_filter
+      REDIS_URL: redis://redis:6379/0
+      OMDB_API_KEY: ${OMDB_API_KEY}
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Celery worker for weekly refresh
+  celery_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: reel-filter-celery-worker
+    environment:
+      DATABASE_URL: postgresql://reel_filter_user:${DB_PASSWORD:-dev_password_change_in_production}@db:5432/reel_filter
+      REDIS_URL: redis://redis:6379/0
+      OMDB_API_KEY: ${OMDB_API_KEY}
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+    volumes:
+      - ./backend:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: celery -A src.jobs.celery_app worker --loglevel=info
+
+  # Celery beat scheduler for cron jobs
+  celery_beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: reel-filter-celery-beat
+    environment:
+      DATABASE_URL: postgresql://reel_filter_user:${DB_PASSWORD:-dev_password_change_in_production}@db:5432/reel_filter
+      REDIS_URL: redis://redis:6379/0
+      OMDB_API_KEY: ${OMDB_API_KEY}
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+    volumes:
+      - ./backend:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: celery -A src.jobs.celery_app beat --loglevel=info
+
+  # React frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: reel-filter-frontend
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000/api}
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    command: npm run dev -- --host 0.0.0.0
+
+volumes:
+  postgres_data:
+  redis_data:
