@@ -87,26 +87,23 @@ const FilterPanel = ({ filters, onFilterChange, onReset, onApply }: FilterPanelP
   }, [])
 
   // Content threshold controls
-  const handleContentSliderChange = (
+  const handleContentSliderCommit = (
     key: 'sex_max' | 'violence_max' | 'language_max',
-    value: string
+    value: number
   ) => {
-    onFilterChange(key, parseInt(value, 10))
-  }
-
-  const handleAnyCheckboxChange = (
-    key: 'sex_max' | 'violence_max' | 'language_max',
-    checked: boolean
-  ) => {
-    if (checked) {
+    // 10 = "Any" (no filter)
+    if (value >= 10) {
       onFilterChange(key, null)
     } else {
-      onFilterChange(key, 5) // Default to 5 when enabling
+      onFilterChange(key, value)
     }
   }
 
-  const isAnySelected = (threshold: number | null | undefined): boolean => {
-    return threshold === null || threshold === undefined
+  const contentDisplayValue = (threshold: number | null | undefined, sliderVal: number): string => {
+    const v = (threshold === null || threshold === undefined) ? sliderVal : threshold
+    if (v >= 10) return 'Any'
+    if (v === 0) return '≤ None'
+    return `≤ ${v}`
   }
 
   // Genre toggle
@@ -167,7 +164,7 @@ const FilterPanel = ({ filters, onFilterChange, onReset, onApply }: FilterPanelP
     </div>
   )
 
-  // Content threshold control with local state during drag
+  // Content threshold control — slider only, 0=None, 10=Any
   const ContentThresholdControl = ({
     label,
     filterKey,
@@ -179,30 +176,21 @@ const FilterPanel = ({ filters, onFilterChange, onReset, onApply }: FilterPanelP
     value: number | null | undefined
     color: string
   }) => {
-    const anySelected = isAnySelected(value)
+    // null/undefined means "Any" which maps to slider position 10
+    const sliderValue = (value === null || value === undefined) ? 10 : value
 
     return (
-      <div className="space-y-2">
+      <div>
         <RangeSlider
           label={label}
           min={0} max={10} step={1}
-          value={anySelected ? 5 : (value ?? 5)}
-          displayValue={(v) => anySelected ? 'Any' : `≤ ${v}`}
-          onCommit={(v) => handleContentSliderChange(filterKey, String(v))}
-          color={anySelected ? 'text-gray-400' : color}
+          value={sliderValue}
+          displayValue={(v) => contentDisplayValue(value, v)}
+          onCommit={(v) => handleContentSliderCommit(filterKey, v)}
+          color={sliderValue >= 10 ? 'text-gray-400' : color}
           accent="accent-brand-primary"
-          disabled={anySelected}
+          ticks={['None', '', '', '', '', '', '', '', '', '', 'Any']}
         />
-
-        <label className="flex items-center gap-2 text-sm cursor-pointer min-h-[44px] md:min-h-0">
-          <input
-            type="checkbox"
-            checked={anySelected}
-            onChange={(e) => handleAnyCheckboxChange(filterKey, e.target.checked)}
-            className="w-4 h-4 rounded border-gray-300 text-brand-primary focus:ring-brand-primary cursor-pointer"
-          />
-          <span className="text-gray-600">No limit</span>
-        </label>
       </div>
     )
   }
