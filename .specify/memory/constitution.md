@@ -1,50 +1,40 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+# Reel-Filter Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. User-Centric Content Filtering
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+**The product exists to empower users with granular control over movie content exposure.**
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+- Every filtering feature MUST respect user-defined tolerance thresholds (0-10 scale for Sex/Nudity, Violence/Gore, Language/Profanity)
+- Users MUST be able to filter by multiple criteria simultaneously (genre, ratings, awards, content scores)
+- Filter results MUST accurately reflect user preferences without false positives
+- The user interface MUST make tolerance settings intuitive and immediately understandable
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+**Rationale**: The core differentiator of reel-filter is granular content control. This principle ensures the product always prioritizes the user's ability to make informed viewing decisions based on their personal tolerance levels.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### II. API Resilience & Data Integrity
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+**External data dependencies (OMDb API, Kids-in-Mind) MUST be treated as fallible and handled gracefully.**
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+- All API calls MUST include timeout handling, retry logic, and fallback responses
+- Failed API requests MUST NOT crash the application or display technical error messages to users
+- Scraped data from Kids-in-Mind MUST be validated for completeness and accuracy before storage
+- All external data MUST be sanitized before storage or display
+- API rate limits MUST be respected
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+**Rationale**: The application depends entirely on third-party APIs for its data. Resilient handling ensures users always have a functional experience even when external services are degraded or unavailable.
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+### III. Performance & Responsiveness
 
-## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
+**Search and filtering operations MUST complete in under 1 second for excellent user experience.**
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+- Movie search results MUST appear within 1 second of query submission
+- Filter application (genre, ratings, content scores) MUST update results within 500ms
+- Database queries MUST be optimized with indexes on frequently filtered fields
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Rationale**: Users abandon slow websites. Fast response times are critical for engagement in a content discovery application where users iterate through multiple filter combinations.
+
+---
+
+**Version**: 1.0.0 | **Ratified**: 2026-02-16 | **Last Amended**: 2026-02-16
