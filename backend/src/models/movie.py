@@ -4,10 +4,10 @@ from typing import List, Optional
 from uuid import uuid4
 
 from sqlalchemy import (
-    ARRAY, CheckConstraint, Column, DateTime, Integer, 
+    CheckConstraint, Column, DateTime, Integer,
     Numeric, String, Text, func
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.dialects.postgresql import ARRAY, UUID, JSONB
 from sqlalchemy.orm import relationship
 
 from src.database.base import Base
