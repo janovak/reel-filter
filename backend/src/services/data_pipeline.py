@@ -132,7 +132,12 @@ def scrape_kim() -> dict:
                 # well before the full run finishes. Each entry still gets
                 # its own SAVEPOINT so one bad row (e.g. an unexpected MPAA
                 # value tripping a CHECK constraint) can't roll back the
-                # rest of the page.
+                # rest of the page. Counters are page-local until the page
+                # actually commits, since a failed commit rolls all of them
+                # back together.
+                page_created = 0
+                page_updated = 0
+                page_failed = 0
                 for entry in page_entries:
                     try:
                         with db.begin_nested():
@@ -150,7 +155,7 @@ def scrape_kim() -> dict:
                                     cs.violence_gore = entry["violence"]
                                     cs.language_profanity = entry["language"]
                                     cs.scraped_at = datetime.utcnow()
-                                    updated += 1
+                                    page_updated += 1
                                 else:
                                     db.add(ContentScore(
                                         movie_id=existing.id,
@@ -160,7 +165,7 @@ def scrape_kim() -> dict:
                                         source="kids-in-mind",
                                         match_confidence=100.0,
                                     ))
-                                    created += 1
+                                    page_created += 1
                             else:
                                 # Create a stub movie (will be enriched by OMDb later)
                                 placeholder_id = f"kim-{entry['title'][:50]}-{entry['year']}"
@@ -183,14 +188,45 @@ def scrape_kim() -> dict:
                                     source="kids-in-mind",
                                     match_confidence=100.0,
                                 ))
-                                created += 1
+                                page_created += 1
                     except Exception as e:
-                        failed += 1
+                        page_failed += 1
                         logger.warning(f"Skipping '{entry['title']}' ({entry['year']}): {e}")
 
-                db.commit()
-                total_fetched += len(page_entries)
-                logger.info(f"  Wrote {len(page_entries)} entries ({total_fetched} total so far)")
+                # The commit itself (as opposed to a single entry) can fail
+                # transiently (connection blip, deadlock). Retry a few times
+                # before giving up on this page and moving on, rather than
+                # aborting the rest of the crawl over what's likely temporary.
+                page_committed = False
+                max_commit_attempts = 3
+                for attempt in range(1, max_commit_attempts + 1):
+                    try:
+                        db.commit()
+                        page_committed = True
+                        break
+                    except Exception as e:
+                        db.rollback()
+                        logger.warning(
+                            f"  Commit failed for page '{letter}' "
+                            f"(attempt {attempt}/{max_commit_attempts}): {e}"
+                        )
+                        if attempt < max_commit_attempts:
+                            time.sleep(5)
+
+                if page_committed:
+                    created += page_created
+                    updated += page_updated
+                    failed += page_failed
+                    total_fetched += len(page_entries)
+                    logger.info(f"  Wrote {len(page_entries)} entries ({total_fetched} total so far)")
+                else:
+                    # Rollback undid everything staged for this page, including
+                    # the per-entry work that would have counted as created/updated.
+                    failed += len(page_entries)
+                    logger.error(
+                        f"  Giving up on page '{letter}' after {max_commit_attempts} "
+                        f"failed commit attempts; continuing to next page"
+                    )
 
                 if letter != "z":
                     logger.info(f"  Waiting {crawl_delay}s (crawl delay)...")
