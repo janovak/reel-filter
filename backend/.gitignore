@@ -57,5 +57,8 @@ logs/
 # Alembic
 *.pyc
 
+# Celery beat
+celerybeat-schedule
+
 # OS
 Thumbs.db
