@@ -12,11 +12,12 @@ import apiClient from '../services/api'
  * Reusable range slider that tracks drag locally and only commits on release.
  */
 const RangeSlider = ({
-  label, min, max, step, value, displayValue, onCommit, color, accent, ticks, disabled,
+  label, min, max, step, value, displayValue, onCommit, color, accent, ticks, disabled, colorFn,
 }: {
   label: string; min: number; max: number; step: number; value: number
   displayValue: (v: number) => string; onCommit: (v: number) => void
-  color: string; accent: string; ticks?: string[]; disabled?: boolean
+  color?: string; accent?: string; ticks?: string[]; disabled?: boolean
+  colorFn?: (v: number) => { textClass: string; accentColor: string }
 }) => {
   const [local, setLocal] = useState(value)
   const dragging = useRef(false)
@@ -26,12 +27,15 @@ const RangeSlider = ({
   }, [value])
 
   const shown = dragging.current ? local : value
+  const dynamic = colorFn ? colorFn(shown) : null
+  const textClass = dynamic ? dynamic.textClass : (color ?? 'text-gray-700')
+  const accentStyle = dynamic ? { accentColor: dynamic.accentColor } : {}
 
   return (
     <div>
       <div className="flex items-center justify-between mb-1">
         <label className="text-sm font-medium text-gray-700">{label}</label>
-        <span className={`text-sm font-bold ${color}`}>{displayValue(shown)}</span>
+        <span className={`text-sm font-bold ${textClass}`}>{displayValue(shown)}</span>
       </div>
       <input
         type="range" min={min} max={max} step={step} value={shown}
@@ -46,7 +50,8 @@ const RangeSlider = ({
         }}
         onChange={() => {}} // Controlled input — commit handled by onPointerUp
         disabled={disabled}
-        className={`w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer ${accent}
+        style={accentStyle}
+        className={`w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer ${accent ?? ''}
                     ${disabled ? 'opacity-40 cursor-not-allowed' : ''}`}
       />
       {ticks && (
@@ -99,11 +104,16 @@ const FilterPanel = ({ filters, onFilterChange, onReset, onApply }: FilterPanelP
     }
   }
 
-  const contentDisplayValue = (threshold: number | null | undefined, sliderVal: number): string => {
-    const v = (threshold === null || threshold === undefined) ? sliderVal : threshold
-    if (v >= 10) return 'Any'
-    if (v === 0) return '≤ None'
-    return `≤ ${v}`
+  const contentDisplayValue = (_threshold: number | null | undefined, sliderVal: number): string => {
+    if (sliderVal === 0) return '0'
+    return `≤ ${sliderVal}`
+  }
+
+  const contentSliderColor = (v: number): { textClass: string; accentColor: string } => {
+    if (v === 0)  return { textClass: 'text-green-600', accentColor: '#16a34a' }
+    if (v <= 3)   return { textClass: 'text-yellow-500', accentColor: '#eab308' }
+    if (v <= 7)   return { textClass: 'text-orange-500', accentColor: '#f97316' }
+    return         { textClass: 'text-red-600', accentColor: '#dc2626' }
   }
 
   // Genre toggle
@@ -169,12 +179,10 @@ const FilterPanel = ({ filters, onFilterChange, onReset, onApply }: FilterPanelP
     label,
     filterKey,
     value,
-    color,
   }: {
     label: string
     filterKey: 'sex_max' | 'violence_max' | 'language_max'
     value: number | null | undefined
-    color: string
   }) => {
     // null/undefined means "Any" which maps to slider position 10
     const sliderValue = (value === null || value === undefined) ? 10 : value
@@ -187,9 +195,8 @@ const FilterPanel = ({ filters, onFilterChange, onReset, onApply }: FilterPanelP
           value={sliderValue}
           displayValue={(v) => contentDisplayValue(value, v)}
           onCommit={(v) => handleContentSliderCommit(filterKey, v)}
-          color={sliderValue >= 10 ? 'text-gray-400' : color}
-          accent="accent-brand-primary"
-          ticks={['None', '', '', '', '', '', '', '', '', '', 'Any']}
+          colorFn={contentSliderColor}
+          ticks={['None', '', '', '', '', '', '', '', '', '', 'No limit']}
         />
       </div>
     )
@@ -235,19 +242,16 @@ const FilterPanel = ({ filters, onFilterChange, onReset, onApply }: FilterPanelP
             label="Sex & Nudity"
             filterKey="sex_max"
             value={filters.sex_max}
-            color="text-pink-600"
           />
           <ContentThresholdControl
             label="Violence & Gore"
             filterKey="violence_max"
             value={filters.violence_max}
-            color="text-red-600"
           />
           <ContentThresholdControl
             label="Language & Profanity"
             filterKey="language_max"
             value={filters.language_max}
-            color="text-orange-600"
           />
         </Section>
 
