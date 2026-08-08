@@ -239,7 +239,7 @@ const SearchPage = () => {
         <div className="flex gap-6">
           {/* Desktop Filter Sidebar */}
           <aside className="hidden lg:block w-72 xl:w-80 flex-shrink-0">
-            <div className="sticky top-[140px]">
+            <div className="sticky top-[140px] max-h-[calc(100vh-160px)] overflow-y-auto">
               <FilterPanel
                 filters={filters}
                 onFilterChange={updateFilter}
