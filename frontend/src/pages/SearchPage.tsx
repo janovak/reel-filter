@@ -12,7 +12,7 @@ import { useDarkMode } from '../hooks/useDarkMode'
 import SearchBar from '../components/SearchBar'
 import FilterPanel from '../components/FilterPanel'
 import MovieCard from '../components/MovieCard'
-import apiClient from '../services/api'
+import apiClient, { getErrorMessage } from '../services/api'
 
 const SearchPage = () => {
   const { filters, updateFilter, resetFilters } = useFilters()
@@ -91,7 +91,7 @@ const SearchPage = () => {
       }
     } catch (err) {
       console.error('Search error:', err)
-      setError('Failed to search movies. Please check your connection and try again.')
+      setError(getErrorMessage(err))
       setHasSearched(true)
     } finally {
       setLoading(false)
