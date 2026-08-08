@@ -79,8 +79,12 @@ def scrape_kim() -> dict:
         "User-Agent": "Mozilla/5.0 (compatible; Reel-Filter/1.0)"
     }
 
-    all_entries = []
     crawl_delay = 60  # Respect robots.txt Crawl-delay: 30, we use 60 to be safe
+
+    total_fetched = 0
+    created = 0
+    updated = 0
+    failed = 0
 
     try:
         with httpx.Client(timeout=30, headers=headers, follow_redirects=True) as client:
@@ -99,6 +103,7 @@ def scrape_kim() -> dict:
                 soup = BeautifulSoup(resp.text, "lxml")
                 page_text = soup.get_text()
 
+                page_entries = []
                 for line in page_text.split("\n"):
                     line = line.strip()
                     m = score_pattern.match(line)
@@ -111,7 +116,7 @@ def scrape_kim() -> dict:
                         language = int(m.group(6))
 
                         if all(0 <= s <= 10 for s in [sex, violence, language]):
-                            all_entries.append({
+                            page_entries.append({
                                 "title": title,
                                 "year": year,
                                 "mpaa": mpaa,
@@ -120,81 +125,77 @@ def scrape_kim() -> dict:
                                 "language": language,
                             })
 
-                logger.info(f"  Found {len(all_entries)} total entries so far")
+                # Write this page immediately rather than accumulating
+                # everything in memory for ~26 minutes — a crash or network
+                # drop partway through then only costs the in-flight page,
+                # not the whole crawl, and search results start filling in
+                # well before the full run finishes. Each entry still gets
+                # its own SAVEPOINT so one bad row (e.g. an unexpected MPAA
+                # value tripping a CHECK constraint) can't roll back the
+                # rest of the page.
+                for entry in page_entries:
+                    try:
+                        with db.begin_nested():
+                            existing = db.query(Movie).filter(
+                                Movie.title == entry["title"],
+                                Movie.year == entry["year"],
+                            ).first()
+
+                            if existing:
+                                cs = db.query(ContentScore).filter(
+                                    ContentScore.movie_id == existing.id
+                                ).first()
+                                if cs:
+                                    cs.sex_nudity = entry["sex"]
+                                    cs.violence_gore = entry["violence"]
+                                    cs.language_profanity = entry["language"]
+                                    cs.scraped_at = datetime.utcnow()
+                                    updated += 1
+                                else:
+                                    db.add(ContentScore(
+                                        movie_id=existing.id,
+                                        sex_nudity=entry["sex"],
+                                        violence_gore=entry["violence"],
+                                        language_profanity=entry["language"],
+                                        source="kids-in-mind",
+                                        match_confidence=100.0,
+                                    ))
+                                    created += 1
+                            else:
+                                # Create a stub movie (will be enriched by OMDb later)
+                                placeholder_id = f"kim-{entry['title'][:50]}-{entry['year']}"
+                                movie = Movie(
+                                    title=entry["title"],
+                                    year=entry["year"],
+                                    mpaa_rating=entry["mpaa"] if entry["mpaa"] else None,
+                                    genre=[],
+                                    omdb_id=placeholder_id,
+                                    source="kids-in-mind",
+                                )
+                                db.add(movie)
+                                db.flush()
+
+                                db.add(ContentScore(
+                                    movie_id=movie.id,
+                                    sex_nudity=entry["sex"],
+                                    violence_gore=entry["violence"],
+                                    language_profanity=entry["language"],
+                                    source="kids-in-mind",
+                                    match_confidence=100.0,
+                                ))
+                                created += 1
+                    except Exception as e:
+                        failed += 1
+                        logger.warning(f"Skipping '{entry['title']}' ({entry['year']}): {e}")
+
+                db.commit()
+                total_fetched += len(page_entries)
+                logger.info(f"  Wrote {len(page_entries)} entries ({total_fetched} total so far)")
 
                 if letter != "z":
                     logger.info(f"  Waiting {crawl_delay}s (crawl delay)...")
                     time.sleep(crawl_delay)
 
-        logger.info(f"Scraped {len(all_entries)} movies from Kids-in-Mind")
-
-        # Each entry gets its own SAVEPOINT so one bad row (e.g. an
-        # unexpected MPAA value tripping a CHECK constraint) can't roll back
-        # the entire batch after a ~26-minute crawl. Commit periodically too,
-        # so progress survives even if the process is killed partway through.
-        created = 0
-        updated = 0
-        failed = 0
-        for i, entry in enumerate(all_entries):
-            try:
-                with db.begin_nested():
-                    existing = db.query(Movie).filter(
-                        Movie.title == entry["title"],
-                        Movie.year == entry["year"],
-                    ).first()
-
-                    if existing:
-                        cs = db.query(ContentScore).filter(
-                            ContentScore.movie_id == existing.id
-                        ).first()
-                        if cs:
-                            cs.sex_nudity = entry["sex"]
-                            cs.violence_gore = entry["violence"]
-                            cs.language_profanity = entry["language"]
-                            cs.scraped_at = datetime.utcnow()
-                            updated += 1
-                        else:
-                            db.add(ContentScore(
-                                movie_id=existing.id,
-                                sex_nudity=entry["sex"],
-                                violence_gore=entry["violence"],
-                                language_profanity=entry["language"],
-                                source="kids-in-mind",
-                                match_confidence=100.0,
-                            ))
-                            created += 1
-                    else:
-                        # Create a stub movie (will be enriched by OMDb later)
-                        placeholder_id = f"kim-{entry['title'][:50]}-{entry['year']}"
-                        movie = Movie(
-                            title=entry["title"],
-                            year=entry["year"],
-                            mpaa_rating=entry["mpaa"] if entry["mpaa"] else None,
-                            genre=[],
-                            omdb_id=placeholder_id,
-                            source="kids-in-mind",
-                        )
-                        db.add(movie)
-                        db.flush()
-
-                        db.add(ContentScore(
-                            movie_id=movie.id,
-                            sex_nudity=entry["sex"],
-                            violence_gore=entry["violence"],
-                            language_profanity=entry["language"],
-                            source="kids-in-mind",
-                            match_confidence=100.0,
-                        ))
-                        created += 1
-            except Exception as e:
-                failed += 1
-                logger.warning(f"Skipping '{entry['title']}' ({entry['year']}): {e}")
-
-            if (i + 1) % 200 == 0:
-                db.commit()
-                logger.info(f"  DB write progress: {i + 1}/{len(all_entries)}")
-
-        db.commit()
         duration = int((datetime.utcnow() - start_time).total_seconds())
         logger.info(f"KIM scrape complete: {created} created, {updated} updated, {failed} failed")
 
@@ -203,7 +204,7 @@ def scrape_kim() -> dict:
             db,
             source="kids-in-mind",
             status=status,
-            records_fetched=len(all_entries),
+            records_fetched=total_fetched,
             records_created=created,
             records_updated=updated,
             records_failed=failed,
@@ -212,7 +213,7 @@ def scrape_kim() -> dict:
 
         return {
             "status": status,
-            "fetched": len(all_entries),
+            "fetched": total_fetched,
             "created": created,
             "updated": updated,
             "failed": failed,
