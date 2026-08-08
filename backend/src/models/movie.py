@@ -66,7 +66,7 @@ class Movie(Base):
     awards_metadata = Column(JSONB, nullable=True)  # Detailed awards data (structured JSON)
     
     # Source tracking
-    omdb_id = Column(String(50), unique=True, nullable=False)  # OMDb API identifier
+    omdb_id = Column(String(160), unique=True, nullable=False)  # OMDb API identifier, or "kim-{title}-{year}" placeholder before enrichment
     source = Column(String(20), default="omdb")
     
     # Timestamps
