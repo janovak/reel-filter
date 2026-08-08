@@ -371,7 +371,7 @@ const FilterPanel = ({ filters, onFilterChange, onReset, onApply }: FilterPanelP
             label="IMDb Rating"
             min={0} max={10} step={0.5}
             value={filters.imdb_min ?? 0}
-            displayValue={(v) => v > 0 ? `≥ ${v}` : 'Any'}
+            displayValue={(v) => v <= 0 ? 'Any' : v >= 10 ? `${v}` : `${v}+`}
             onCommit={(v) => onFilterChange('imdb_min', v > 0 ? v : undefined)}
             color="text-yellow-600" accent="accent-yellow-500"
             ticks={['0', '5', '10']}
@@ -382,7 +382,7 @@ const FilterPanel = ({ filters, onFilterChange, onReset, onApply }: FilterPanelP
             label="Rotten Tomatoes"
             min={0} max={100} step={5}
             value={filters.rt_min ?? 0}
-            displayValue={(v) => v > 0 ? `≥ ${v}%` : 'Any'}
+            displayValue={(v) => v <= 0 ? 'Any' : v >= 100 ? `${v}` : `${v}+`}
             onCommit={(v) => onFilterChange('rt_min', v > 0 ? v : undefined)}
             color="text-red-600" accent="accent-red-500"
             ticks={['0%', '50%', '100%']}
@@ -393,7 +393,7 @@ const FilterPanel = ({ filters, onFilterChange, onReset, onApply }: FilterPanelP
             label="Metacritic"
             min={0} max={100} step={5}
             value={filters.metacritic_min ?? 0}
-            displayValue={(v) => v > 0 ? `≥ ${v}` : 'Any'}
+            displayValue={(v) => v <= 0 ? 'Any' : v >= 100 ? `${v}` : `${v}+`}
             onCommit={(v) => onFilterChange('metacritic_min', v > 0 ? v : undefined)}
             color="text-green-600" accent="accent-green-500"
             ticks={['0', '50', '100']}
