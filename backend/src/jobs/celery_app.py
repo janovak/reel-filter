@@ -53,7 +53,6 @@ celery_app.conf.update(
                 minute=0,
             ),
             "kwargs": {},
-            "options": {"queue": "default"},
         },
         "weekly-kim-refresh": {
             "task": "src.jobs.weekly_refresh.refresh_kim_data",
@@ -63,7 +62,6 @@ celery_app.conf.update(
                 day_of_week="sunday",
             ),
             "kwargs": {},
-            "options": {"queue": "default"},
         },
     },
 )

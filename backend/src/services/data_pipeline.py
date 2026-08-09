@@ -11,6 +11,8 @@ import logging
 from datetime import datetime
 from typing import Optional
 
+from sqlalchemy.exc import IntegrityError
+
 from src.database.session import SessionLocal
 from src.models.movie import Movie
 from src.models.content_score import ContentScore
@@ -311,6 +313,10 @@ def fetch_omdb(limit: Optional[int] = None) -> dict:
 
         with OMDbClient() as client:
             for i, movie in enumerate(movies):
+                # Captured up front so the exception handlers can always log
+                # something useful even if the session ends up needing a
+                # rollback before movie's attributes can be lazy-loaded again.
+                movie_title, movie_year = movie.title, movie.year
                 try:
                     omdb_movie = client.get_by_title(movie.title, movie.year)
                     if omdb_movie is None:
@@ -334,12 +340,30 @@ def fetch_omdb(limit: Optional[int] = None) -> dict:
                         movie.awards_count = omdb_movie.awards_count
                         movie.nominations_count = omdb_movie.nominations_count
                         movie.source = "omdb"
-                        matched += 1
+
+                        # Committed per-movie rather than every 50: OMDb calls
+                        # (rate-limited, quota-metered) already happened by
+                        # this point, so a batched commit failing would waste
+                        # already-spent quota by forcing a re-fetch on retry.
+                        try:
+                            db.commit()
+                            matched += 1
+                        except IntegrityError:
+                            # Two KIM placeholder rows resolved to the same
+                            # real OMDb ID (a duplicate title/year entry from
+                            # the crawl). Skip this one instead of losing
+                            # everything else committed so far this run.
+                            db.rollback()
+                            not_found += 1
+                            errors.append({
+                                "movie_title": movie_title,
+                                "error": "IntegrityError",
+                                "message": f"omdb_id {omdb_movie.imdb_id} already used by another movie (likely a duplicate KIM entry)",
+                            })
                     else:
                         not_found += 1
 
                     if (i + 1) % 50 == 0:
-                        db.commit()
                         remaining = total_remaining - fetched
                         logger.info(
                             f"  Progress: {fetched}/{len(movies)} fetched, "
@@ -356,15 +380,14 @@ def fetch_omdb(limit: Optional[int] = None) -> dict:
                     break
 
                 except Exception as e:
-                    logger.warning(f"  Error fetching '{movie.title}' ({movie.year}): {e}")
+                    db.rollback()
+                    logger.warning(f"  Error fetching '{movie_title}' ({movie_year}): {e}")
                     not_found += 1
                     errors.append({
-                        "movie_title": movie.title,
+                        "movie_title": movie_title,
                         "error": type(e).__name__,
                         "message": str(e),
                     })
-
-        db.commit()
 
         remaining = total_remaining - fetched
         duration = int((datetime.utcnow() - start_time).total_seconds())
