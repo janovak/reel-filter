@@ -317,9 +317,9 @@ const FilterPanel = ({ filters, onFilterChange, onReset, onApply }: FilterPanelP
             </div>
           </div>
 
-          {/* MPAA Rating Multi-Select */}
+          {/* MPAA / TV Rating Multi-Select */}
           <div>
-            <label className="text-sm font-medium text-gray-700 block mb-2">MPAA Rating</label>
+            <label className="text-sm font-medium text-gray-700 block mb-2">MPAA / TV Rating</label>
             <div className="flex flex-wrap gap-1.5">
               {MPAA_RATINGS.map((rating) => {
                 const isSelected = filters.mpaa_ratings?.includes(rating)
