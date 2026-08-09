@@ -20,6 +20,33 @@ from src.models.data_refresh_log import DataRefreshLog
 
 logger = logging.getLogger(__name__)
 
+# Kept in sync with the check_mpaa_rating constraint in src/models/movie.py.
+# KIM covers TV movies/specials as well as theatrical releases, so both MPAA
+# and TV Parental Guidelines ratings show up in the scrape. Keyed by the
+# uppercased form so lookups are case-insensitive; values are the exact
+# strings the DB constraint allows.
+_VALID_MPAA_RATINGS = {
+    v.upper(): v for v in (
+        "G", "PG", "PG-13", "R", "NC-17", "Not Rated",
+        "TV-Y", "TV-Y7", "TV-G", "TV-PG", "TV-14", "TV-MA",
+    )
+}
+_MPAA_ALIASES = {"NR": "Not Rated", "UNRATED": "Not Rated", "UR": "Not Rated"}
+
+
+def _normalize_mpaa_rating(raw: Optional[str]) -> Optional[str]:
+    """Map a scraped MPAA/TV rating string onto the DB's allowed set.
+
+    Returns None for anything unrecognized (e.g. a parsing artifact) rather
+    than letting it trip the check_mpaa_rating constraint.
+    """
+    if not raw:
+        return None
+    value = raw.strip().upper()
+    if value in _MPAA_ALIASES:
+        return _MPAA_ALIASES[value]
+    return _VALID_MPAA_RATINGS.get(value)
+
 
 def ensure_tables():
     """Create tables if they don't exist."""
@@ -112,7 +139,7 @@ def scrape_kim() -> dict:
                     if m:
                         title = m.group(1).strip()
                         year = int(m.group(2))
-                        mpaa = m.group(3).strip()
+                        mpaa = _normalize_mpaa_rating(m.group(3).strip())
                         sex = int(m.group(4))
                         violence = int(m.group(5))
                         language = int(m.group(6))

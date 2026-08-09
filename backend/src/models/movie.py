@@ -85,7 +85,10 @@ class Movie(Base):
     __table_args__ = (
         CheckConstraint("year >= 1888 AND year <= 2100", name="check_year_range"),
         CheckConstraint(
-            "mpaa_rating IN ('G', 'PG', 'PG-13', 'R', 'NC-17', 'Not Rated') OR mpaa_rating IS NULL",
+            "mpaa_rating IN ("
+            "'G', 'PG', 'PG-13', 'R', 'NC-17', 'Not Rated', "
+            "'TV-Y', 'TV-Y7', 'TV-G', 'TV-PG', 'TV-14', 'TV-MA'"
+            ") OR mpaa_rating IS NULL",
             name="check_mpaa_rating"
         ),
         CheckConstraint(
