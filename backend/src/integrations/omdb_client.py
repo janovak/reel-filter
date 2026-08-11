@@ -112,6 +112,20 @@ class OMDbClient:
         params["apikey"] = self.api_key
 
         response = self._client.get(self.BASE_URL, params=params)
+
+        # OMDb signals a fully-exhausted daily quota with an HTTP 401 (not a
+        # 200 with an error body like other errors), so this has to be
+        # checked before raise_for_status() turns it into an unhandled
+        # httpx.HTTPStatusError instead of the OMDbRateLimitError callers
+        # expect.
+        if response.status_code == 401:
+            try:
+                error_msg = response.json().get("Error", "")
+            except ValueError:
+                error_msg = ""
+            if "request limit" in error_msg.lower():
+                raise OMDbRateLimitError(f"Rate limit exceeded: {error_msg}")
+
         response.raise_for_status()
 
         data = response.json()
@@ -145,6 +159,8 @@ class OMDbClient:
             return self._parse_movie(data)
         except OMDbNotFoundError:
             return None
+        except OMDbRateLimitError:
+            raise
         except OMDbClientError as e:
             logger.error(f"Failed to fetch movie {imdb_id}: {e}")
             return None
@@ -160,6 +176,8 @@ class OMDbClient:
             return self._parse_movie(data)
         except OMDbNotFoundError:
             return None
+        except OMDbRateLimitError:
+            raise
         except OMDbClientError as e:
             logger.error(f"Failed to fetch movie '{title}': {e}")
             return None

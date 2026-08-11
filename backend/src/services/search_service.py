@@ -63,9 +63,16 @@ class SearchService:
         
         # Title search (full-text search)
         if filters.q:
+            # SQLAlchemy's .match() always wraps its argument in
+            # plainto_tsquery() on the postgresql dialect, so passing an
+            # already-built to_tsquery() into it double-wraps and fails with
+            # "function plainto_tsquery(tsquery) does not exist". Use the
+            # @@ operator directly instead. websearch_to_tsquery (rather than
+            # to_tsquery) also handles plain multi-word input like "The
+            # Lorax" without raising a tsquery syntax error.
             query = query.filter(
-                func.to_tsvector('english', Movie.title).match(
-                    func.to_tsquery('english', filters.q)
+                func.to_tsvector('english', Movie.title).op('@@')(
+                    func.websearch_to_tsquery('english', filters.q)
                 )
             )
         

@@ -91,8 +91,13 @@ export interface ErrorResponse {
   details?: unknown
 }
 
-// MPAA ratings enum
-export const MPAA_RATINGS = ['G', 'PG', 'PG-13', 'R', 'NC-17', 'Not Rated'] as const
+// MPAA ratings enum, plus the TV Parental Guidelines ratings that show up
+// on the TV movies/specials KIM also covers. Kept as distinct options
+// rather than folded into their MPAA counterpart (e.g. TV-PG into PG).
+export const MPAA_RATINGS = [
+  'G', 'PG', 'PG-13', 'R', 'NC-17', 'Not Rated',
+  'TV-Y', 'TV-Y7', 'TV-G', 'TV-PG', 'TV-14', 'TV-MA',
+] as const
 export type MpaaRating = typeof MPAA_RATINGS[number]
 
 // Genre enum (common genres)

@@ -4,10 +4,10 @@ from typing import List, Optional
 from uuid import uuid4
 
 from sqlalchemy import (
-    ARRAY, CheckConstraint, Column, DateTime, Integer, 
+    CheckConstraint, Column, DateTime, Integer,
     Numeric, String, Text, func
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.dialects.postgresql import ARRAY, UUID, JSONB
 from sqlalchemy.orm import relationship
 
 from src.database.base import Base
@@ -66,7 +66,7 @@ class Movie(Base):
     awards_metadata = Column(JSONB, nullable=True)  # Detailed awards data (structured JSON)
     
     # Source tracking
-    omdb_id = Column(String(50), unique=True, nullable=False)  # OMDb API identifier
+    omdb_id = Column(String(160), unique=True, nullable=False)  # OMDb API identifier, or "kim-{title}-{year}" placeholder before enrichment
     source = Column(String(20), default="omdb")
     
     # Timestamps
@@ -85,7 +85,10 @@ class Movie(Base):
     __table_args__ = (
         CheckConstraint("year >= 1888 AND year <= 2100", name="check_year_range"),
         CheckConstraint(
-            "mpaa_rating IN ('G', 'PG', 'PG-13', 'R', 'NC-17', 'Not Rated') OR mpaa_rating IS NULL",
+            "mpaa_rating IN ("
+            "'G', 'PG', 'PG-13', 'R', 'NC-17', 'Not Rated', "
+            "'TV-Y', 'TV-Y7', 'TV-G', 'TV-PG', 'TV-14', 'TV-MA'"
+            ") OR mpaa_rating IS NULL",
             name="check_mpaa_rating"
         ),
         CheckConstraint(

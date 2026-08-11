@@ -2,7 +2,7 @@
 
 Configures Celery for:
 - Redis as broker and result backend
-- Weekly data refresh task (Sunday 2 AM)
+- Daily OMDb enrichment (6 AM UTC) and weekly KIM re-crawl (Sunday 3 AM)
 - Retry policies for failed tasks
 """
 import os
@@ -43,17 +43,16 @@ celery_app.conf.update(
     # Result expiry
     result_expires=86400,  # 24 hours
 
-    # Beat schedule - weekly data refresh
+    # Beat schedule - OMDb enrichment runs daily (quota-aware, clears the
+    # backlog over several days); KIM re-crawl stays weekly.
     beat_schedule={
-        "weekly-omdb-refresh": {
+        "daily-omdb-refresh": {
             "task": "src.jobs.weekly_refresh.refresh_omdb_data",
             "schedule": crontab(
-                hour=2,
+                hour=6,
                 minute=0,
-                day_of_week="sunday",
             ),
             "kwargs": {},
-            "options": {"queue": "default"},
         },
         "weekly-kim-refresh": {
             "task": "src.jobs.weekly_refresh.refresh_kim_data",
@@ -63,7 +62,6 @@ celery_app.conf.update(
                 day_of_week="sunday",
             ),
             "kwargs": {},
-            "options": {"queue": "default"},
         },
     },
 )

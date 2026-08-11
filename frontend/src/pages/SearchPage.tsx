@@ -12,7 +12,7 @@ import { useDarkMode } from '../hooks/useDarkMode'
 import SearchBar from '../components/SearchBar'
 import FilterPanel from '../components/FilterPanel'
 import MovieCard from '../components/MovieCard'
-import apiClient from '../services/api'
+import apiClient, { getErrorMessage } from '../services/api'
 
 const SearchPage = () => {
   const { filters, updateFilter, resetFilters } = useFilters()
@@ -91,7 +91,7 @@ const SearchPage = () => {
       }
     } catch (err) {
       console.error('Search error:', err)
-      setError('Failed to search movies. Please check your connection and try again.')
+      setError(getErrorMessage(err))
       setHasSearched(true)
     } finally {
       setLoading(false)
@@ -239,7 +239,7 @@ const SearchPage = () => {
         <div className="flex gap-6">
           {/* Desktop Filter Sidebar */}
           <aside className="hidden lg:block w-72 xl:w-80 flex-shrink-0">
-            <div className="sticky top-[140px]">
+            <div className="sticky top-[140px] max-h-[calc(100vh-160px)] overflow-y-auto">
               <FilterPanel
                 filters={filters}
                 onFilterChange={updateFilter}

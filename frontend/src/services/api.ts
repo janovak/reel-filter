@@ -43,7 +43,7 @@ apiClient.interceptors.response.use(
     } else if (error.request) {
       // Network error - no response received
       const enhancedError = error as AxiosError & { userMessage: string }
-      enhancedError.userMessage = 'Unable to connect to the server. Please check your internet connection.'
+      enhancedError.userMessage = "Can't connect to the server. Please try again."
       console.error('Network Error: Unable to connect to the server')
     } else {
       const enhancedError = error as AxiosError & { userMessage: string }
