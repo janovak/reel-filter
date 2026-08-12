@@ -11,7 +11,7 @@ Auto-generated from all feature plans. Last updated: 2025-01-23
 - Celery + Redis (async task queue for weekly refresh)
 - httpx (async HTTP client)
 - BeautifulSoup4 + lxml (web scraping)
-- RapidFuzz (fuzzy string matching)
+- Exact title/year matching (SQL, no fuzzy-matching library)
 - Pydantic (data validation)
 
 **Frontend (001-movie-content-search)**:
