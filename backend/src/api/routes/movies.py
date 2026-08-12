@@ -1,7 +1,8 @@
 """Movies API routes"""
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
-from typing import List, Optional
 
 from src.database.session import get_db
 from src.services.search_service import SearchService
@@ -14,20 +15,7 @@ router = APIRouter()
 
 @router.get("/search", response_model=SearchResponse)
 async def search_movies(
-    q: Optional[str] = None,
-    genres: Optional[List[str]] = Query(None),
-    year_min: Optional[int] = None,
-    year_max: Optional[int] = None,
-    mpaa_ratings: Optional[List[str]] = Query(None),
-    imdb_min: Optional[float] = None,
-    rt_min: Optional[int] = None,
-    metacritic_min: Optional[int] = None,
-    awards_min: Optional[int] = None,
-    sex_max: Optional[int] = None,
-    violence_max: Optional[int] = None,
-    language_max: Optional[int] = None,
-    page: int = 1,
-    per_page: int = 30,
+    filters: Annotated[SearchFilters, Query()],
     db: Session = Depends(get_db)
 ):
     """
@@ -39,25 +27,13 @@ async def search_movies(
     - Movies exceeding ANY threshold are filtered out
 
     Pagination: Returns 20-30 movies per page with pagination metadata
-    """
-    # Build filters object
-    filters = SearchFilters(
-        q=q,
-        genres=genres,
-        year_min=year_min,
-        year_max=year_max,
-        mpaa_ratings=mpaa_ratings,
-        imdb_min=imdb_min,
-        rt_min=rt_min,
-        metacritic_min=metacritic_min,
-        awards_min=awards_min,
-        sex_max=sex_max,
-        violence_max=violence_max,
-        language_max=language_max,
-        page=page,
-        per_page=per_page
-    )
 
+    `filters` is bound straight from the query string into SearchFilters (a
+    FastAPI 0.115+ query parameter model), the same Filter Set shape the
+    frontend's domain/filterSet.ts builds params from — one declaration of
+    the 14 params instead of a signature and a reconstruction that must be
+    kept in sync by hand.
+    """
     # Execute search
     service = SearchService(db)
     movies, pagination = service.search_movies(filters)

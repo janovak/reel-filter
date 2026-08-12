@@ -13,6 +13,7 @@ import SearchBar from '../components/SearchBar'
 import FilterPanel from '../components/FilterPanel'
 import MovieCard from '../components/MovieCard'
 import apiClient, { getErrorMessage } from '../services/api'
+import { buildSearchParams, filterSetChangeKey, isMemberActive, totalActiveFilters } from '../domain/filterSet'
 
 const SearchPage = () => {
   const { filters, updateFilter, resetFilters } = useFilters()
@@ -31,49 +32,9 @@ const SearchPage = () => {
       setLoading(true)
       setError(null)
 
-      // Build query params from ALL filters
-      const params: Record<string, string | number | string[]> = {
-        page: pageNum,
-        per_page: filters.per_page || 30,
-      }
-
-      // Text search
-      if (filters.q && filters.q.trim()) {
-        params.q = filters.q.trim()
-      }
-
-      // Genre filter
-      if (filters.genres && filters.genres.length > 0) {
-        params.genres = filters.genres
-      }
-
-      // Year range
-      if (filters.year_min) params.year_min = filters.year_min
-      if (filters.year_max) params.year_max = filters.year_max
-
-      // MPAA ratings
-      if (filters.mpaa_ratings && filters.mpaa_ratings.length > 0) {
-        params.mpaa_ratings = filters.mpaa_ratings
-      }
-
-      // Quality ratings
-      if (filters.imdb_min && filters.imdb_min > 0) params.imdb_min = filters.imdb_min
-      if (filters.rt_min && filters.rt_min > 0) params.rt_min = filters.rt_min
-      if (filters.metacritic_min && filters.metacritic_min > 0) params.metacritic_min = filters.metacritic_min
-
-      // Awards
-      if (filters.awards_min && filters.awards_min > 0) params.awards_min = filters.awards_min
-
-      // Content thresholds (only if not "any")
-      if (filters.sex_max !== null && filters.sex_max !== undefined) {
-        params.sex_max = filters.sex_max
-      }
-      if (filters.violence_max !== null && filters.violence_max !== undefined) {
-        params.violence_max = filters.violence_max
-      }
-      if (filters.language_max !== null && filters.language_max !== undefined) {
-        params.language_max = filters.language_max
-      }
+      // Query params for every active member of the Filter Set (the target
+      // page, not filters.page — see buildSearchParams).
+      const params = buildSearchParams(filters, pageNum)
 
       // Call API
       const response = await apiClient.get<SearchResponse>('/movies/search', {
@@ -98,6 +59,10 @@ const SearchPage = () => {
     }
   }, [filters, updateFilter])
 
+  // Changes exactly when a search-affecting member of the Filter Set
+  // changes — not for page/per_page, which are not Filter Set members.
+  const filterSetKey = filterSetChangeKey(filters)
+
   /**
    * Auto-search when filters change (debounced by useFilters/SearchBar)
    */
@@ -105,16 +70,13 @@ const SearchPage = () => {
     if (hasSearched) {
       performSearch(1)
     }
+    // hasSearched/performSearch are intentionally excluded: performSearch's
+    // identity changes with every filters change (including page), and
+    // hasSearched is flipped to true by callers that already call
+    // performSearch themselves — including either here would refire this
+    // effect on pagination or double-fetch the first search.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    filters.q,
-    filters.sex_max, filters.violence_max, filters.language_max,
-    filters.genres?.join(','),
-    filters.year_min, filters.year_max,
-    filters.mpaa_ratings?.join(','),
-    filters.imdb_min, filters.rt_min, filters.metacritic_min,
-    filters.awards_min,
-  ])
+  }, [filterSetKey])
 
   /**
    * Handle pagination
@@ -137,32 +99,26 @@ const SearchPage = () => {
   /**
    * Count active filters (for mobile badge)
    */
-  const activeFilterCount = [
-    filters.sex_max !== null && filters.sex_max !== undefined,
-    filters.violence_max !== null && filters.violence_max !== undefined,
-    filters.language_max !== null && filters.language_max !== undefined,
-    filters.genres && filters.genres.length > 0,
-    !!filters.year_min,
-    !!filters.year_max,
-    filters.mpaa_ratings && filters.mpaa_ratings.length > 0,
-    filters.imdb_min && filters.imdb_min > 0,
-    filters.rt_min && filters.rt_min > 0,
-    filters.metacritic_min && filters.metacritic_min > 0,
-    filters.awards_min && filters.awards_min > 0,
-  ].filter(Boolean).length
+  const activeFilterCount = totalActiveFilters(filters)
 
   /**
    * Get filter relaxation suggestions based on active filters
    */
   const getRelaxSuggestions = (): string[] => {
     const suggestions: string[] = []
-    if (filters.q) suggestions.push('Try a different search term or clear the search')
-    if (filters.sex_max !== null || filters.violence_max !== null || filters.language_max !== null) {
+    if (isMemberActive(filters, 'q')) suggestions.push('Try a different search term or clear the search')
+    if (
+      isMemberActive(filters, 'sex_max') ||
+      isMemberActive(filters, 'violence_max') ||
+      isMemberActive(filters, 'language_max')
+    ) {
       suggestions.push('Increase content thresholds or set to "No limit"')
     }
-    if (filters.genres && filters.genres.length > 0) suggestions.push('Remove some genre filters')
-    if (filters.imdb_min && filters.imdb_min > 0) suggestions.push('Lower the minimum IMDb rating')
-    if (filters.year_min || filters.year_max) suggestions.push('Widen the year range')
+    if (isMemberActive(filters, 'genres')) suggestions.push('Remove some genre filters')
+    if (isMemberActive(filters, 'imdb_min')) suggestions.push('Lower the minimum IMDb rating')
+    if (isMemberActive(filters, 'year_min') || isMemberActive(filters, 'year_max')) {
+      suggestions.push('Widen the year range')
+    }
     if (suggestions.length === 0) suggestions.push('Try different search criteria')
     return suggestions
   }

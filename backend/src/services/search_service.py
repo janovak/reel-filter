@@ -37,14 +37,10 @@ class SearchService:
         # Base query with eager loading of content_score relationship
         query = self.db.query(Movie).options(joinedload(Movie.content_score))
         
-        # Content filtering logic
-        has_content_filters = any([
-            filters.sex_max is not None,
-            filters.violence_max is not None,
-            filters.language_max is not None
-        ])
-        
-        if has_content_filters:
+        # Content filtering logic — the rule itself lives on SearchFilters
+        # (has_content_filters), so it has one definition shared with
+        # anything else that needs to ask the same question.
+        if filters.has_content_filters:
             # JOIN with content_scores (inner join to exclude movies without content scores)
             query = query.join(ContentScore, Movie.id == ContentScore.movie_id)
             

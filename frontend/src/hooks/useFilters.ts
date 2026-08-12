@@ -1,28 +1,16 @@
 /**
  * useFilters hook for session storage
+ *
+ * Owns the React-lifecycle side of the Filter Set: reading and writing
+ * sessionStorage, and resetting to page 1 when a filter changes. The Filter
+ * Set domain module (src/domain/filterSet.ts) owns the defaults and the
+ * merge used to restore a Filter Set from storage — this hook just calls it.
  */
 import { useState, useEffect } from 'react'
 import { SearchFilters } from '../types/api.types'
+import { getDefaultFilterSet, restoreFilterSet } from '../domain/filterSet'
 
 const STORAGE_KEY = 'reel-filter-search-filters'
-
-// Default filter values
-const getDefaultFilters = (): SearchFilters => ({
-  q: '',
-  genres: [],
-  year_min: undefined,
-  year_max: undefined,
-  mpaa_ratings: [],
-  imdb_min: 0,
-  rt_min: 0,
-  metacritic_min: 0,
-  awards_min: undefined,
-  sex_max: null, // null = "any" (no limit)
-  violence_max: null,
-  language_max: null,
-  page: 1,
-  per_page: 30,
-})
 
 /**
  * Custom hook for managing search filters with session storage persistence
@@ -33,12 +21,12 @@ export function useFilters() {
     try {
       const stored = sessionStorage.getItem(STORAGE_KEY)
       if (stored) {
-        return JSON.parse(stored)
+        return restoreFilterSet(JSON.parse(stored))
       }
     } catch (error) {
       console.error('Failed to load filters from session storage:', error)
     }
-    return getDefaultFilters()
+    return getDefaultFilterSet()
   })
 
   // Persist to sessionStorage whenever filters change
@@ -68,19 +56,8 @@ export function useFilters() {
    * Reset all filters to default values
    */
   const resetFilters = () => {
-    setFilters(getDefaultFilters())
+    setFilters(getDefaultFilterSet())
     sessionStorage.removeItem(STORAGE_KEY)
-  }
-
-  /**
-   * Check if any content filters are active (not "any")
-   */
-  const hasContentFilters = () => {
-    return (
-      filters.sex_max !== null ||
-      filters.violence_max !== null ||
-      filters.language_max !== null
-    )
   }
 
   return {
@@ -88,6 +65,5 @@ export function useFilters() {
     setFilters,
     updateFilter,
     resetFilters,
-    hasContentFilters,
   }
 }

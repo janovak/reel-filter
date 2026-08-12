@@ -7,6 +7,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { SearchFilters, MPAA_RATINGS, GENRES } from '../types/api.types'
 import apiClient from '../services/api'
+import { countActiveFilters, emptyValueFor } from '../domain/filterSet'
 
 /**
  * Reusable range slider that tracks drag locally and only commits on release.
@@ -98,7 +99,7 @@ const FilterPanel = ({ filters, onFilterChange, onReset, onApply }: FilterPanelP
   ) => {
     // 10 = "Any" (no filter)
     if (value >= 10) {
-      onFilterChange(key, null)
+      onFilterChange(key, emptyValueFor(key))
     } else {
       onFilterChange(key, value)
     }
@@ -122,7 +123,7 @@ const FilterPanel = ({ filters, onFilterChange, onReset, onApply }: FilterPanelP
     const updated = current.includes(genre)
       ? current.filter((g) => g !== genre)
       : [...current, genre]
-    onFilterChange('genres', updated.length > 0 ? updated : undefined)
+    onFilterChange('genres', updated.length > 0 ? updated : emptyValueFor('genres'))
   }
 
   // MPAA rating toggle
@@ -131,7 +132,7 @@ const FilterPanel = ({ filters, onFilterChange, onReset, onApply }: FilterPanelP
     const updated = current.includes(rating)
       ? current.filter((r) => r !== rating)
       : [...current, rating]
-    onFilterChange('mpaa_ratings', updated.length > 0 ? updated : undefined)
+    onFilterChange('mpaa_ratings', updated.length > 0 ? updated : emptyValueFor('mpaa_ratings'))
   }
 
   // Collapsible section component
@@ -202,20 +203,10 @@ const FilterPanel = ({ filters, onFilterChange, onReset, onApply }: FilterPanelP
     )
   }
 
-  // Count active filters
-  const activeContentFilters = [filters.sex_max, filters.violence_max, filters.language_max].filter(
-    (v) => v !== null && v !== undefined
-  ).length
-  const activeTraditionalFilters =
-    (filters.genres && filters.genres.length > 0 ? 1 : 0) +
-    (filters.year_min ? 1 : 0) +
-    (filters.year_max ? 1 : 0) +
-    (filters.mpaa_ratings && filters.mpaa_ratings.length > 0 ? 1 : 0) +
-    (filters.awards_min ? 1 : 0)
-  const activeQualityFilters =
-    (filters.imdb_min && filters.imdb_min > 0 ? 1 : 0) +
-    (filters.rt_min && filters.rt_min > 0 ? 1 : 0) +
-    (filters.metacritic_min && filters.metacritic_min > 0 ? 1 : 0)
+  // Count active filters, by FilterPanel section
+  const activeContentFilters = countActiveFilters(filters, 'content')
+  const activeTraditionalFilters = countActiveFilters(filters, 'traditional')
+  const activeQualityFilters = countActiveFilters(filters, 'quality')
 
   return (
     <div className="bg-white rounded-lg shadow-md p-4 md:p-6">
@@ -372,7 +363,7 @@ const FilterPanel = ({ filters, onFilterChange, onReset, onApply }: FilterPanelP
             min={0} max={10} step={0.5}
             value={filters.imdb_min ?? 0}
             displayValue={(v) => v <= 0 ? 'Any' : v >= 10 ? `${v}` : `${v}+`}
-            onCommit={(v) => onFilterChange('imdb_min', v > 0 ? v : undefined)}
+            onCommit={(v) => onFilterChange('imdb_min', v > 0 ? v : emptyValueFor('imdb_min'))}
             color="text-yellow-600" accent="accent-yellow-500"
             ticks={['0', '5', '10']}
           />
@@ -383,7 +374,7 @@ const FilterPanel = ({ filters, onFilterChange, onReset, onApply }: FilterPanelP
             min={0} max={100} step={5}
             value={filters.rt_min ?? 0}
             displayValue={(v) => v <= 0 ? 'Any' : v >= 100 ? `${v}` : `${v}+`}
-            onCommit={(v) => onFilterChange('rt_min', v > 0 ? v : undefined)}
+            onCommit={(v) => onFilterChange('rt_min', v > 0 ? v : emptyValueFor('rt_min'))}
             color="text-red-600" accent="accent-red-500"
             ticks={['0%', '50%', '100%']}
           />
@@ -394,7 +385,7 @@ const FilterPanel = ({ filters, onFilterChange, onReset, onApply }: FilterPanelP
             min={0} max={100} step={5}
             value={filters.metacritic_min ?? 0}
             displayValue={(v) => v <= 0 ? 'Any' : v >= 100 ? `${v}` : `${v}+`}
-            onCommit={(v) => onFilterChange('metacritic_min', v > 0 ? v : undefined)}
+            onCommit={(v) => onFilterChange('metacritic_min', v > 0 ? v : emptyValueFor('metacritic_min'))}
             color="text-green-600" accent="accent-green-500"
             ticks={['0', '50', '100']}
           />

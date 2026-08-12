@@ -50,7 +50,23 @@ class SearchFilters(BaseModel):
             if v < values['year_min']:
                 raise ValueError('year_max must be greater than or equal to year_min')
         return v
-    
+
+    @property
+    def has_content_filters(self) -> bool:
+        """
+        Whether any Content Threshold (sex_max, violence_max, language_max)
+        is set. The three behave as a group: when any one is active, Movies
+        with no Content Score drop out of the results entirely — see
+        SearchService.search_movies and CONTEXT.md's "Content Threshold"
+        entry. `0` is a real, active threshold ("none at all"), so this
+        checks `is not None` rather than truthiness.
+        """
+        return any([
+            self.sex_max is not None,
+            self.violence_max is not None,
+            self.language_max is not None,
+        ])
+
     class Config:
         schema_extra = {
             "example": {

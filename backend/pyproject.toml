@@ -47,4 +47,7 @@ target-version = "py311"
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
-pythonpath = ["src"]
+# "." (not "src") — every module under src/ imports with the "src." prefix
+# (e.g. "from src.database.session import get_db"), which needs the
+# backend/ directory itself on sys.path, not backend/src.
+pythonpath = ["."]
