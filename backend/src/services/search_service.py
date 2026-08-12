@@ -1,12 +1,12 @@
 """SearchService - movie search and filtering logic"""
-from typing import List, Tuple, Optional
-from sqlalchemy import and_, or_, func
+from typing import List, Tuple
+from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
 from src.models.movie import Movie
 from src.models.content_score import ContentScore
 from src.api.schemas.search import SearchFilters
-from src.api.schemas.movie import MovieSchema, PaginationInfo
+from src.api.schemas.movie import PaginationInfo
 import math
 
 
@@ -127,20 +127,3 @@ class SearchService:
         )
         
         return movies, pagination
-    
-    def get_movie_by_id(self, movie_id: str) -> Optional[Movie]:
-        """
-        Get a single movie by ID with content score.
-        
-        Args:
-            movie_id: UUID of the movie
-            
-        Returns:
-            Movie object or None if not found
-        """
-        return (
-            self.db.query(Movie)
-            .options(joinedload(Movie.content_score))
-            .filter(Movie.id == movie_id)
-            .first()
-        )

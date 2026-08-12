@@ -13,7 +13,7 @@ A web application for searching and filtering movies based on **content toleranc
 - **Session persistence**: Filters persist during your browser session
 - **Health monitoring**: `/api/health` endpoint with database and refresh status
 - **Performance logging**: Slow query warnings (>500ms), request timing headers
-- **Data integration**: OMDb API client, Kids-in-Mind scraper, RapidFuzz matching, Celery weekly refresh
+- **Data integration**: OMDb API client, Kids-in-Mind scraper, exact title/year matching, Celery weekly refresh
 
 ## 🚀 Quick Start
 
@@ -84,7 +84,7 @@ reel-filter/
 │   │   │   └── middleware/     # error handling, logging, performance
 │   │   ├── database/           # SQLAlchemy engine, session, base
 │   │   ├── models/             # Movie, ContentScore, DataRefreshLog
-│   │   ├── services/           # SearchService, MovieService, MatchingService
+│   │   ├── services/           # SearchService, MovieService
 │   │   ├── integrations/       # OMDb client, KIM scraper
 │   │   ├── jobs/               # Celery app, weekly refresh tasks
 │   │   └── main.py
@@ -114,7 +114,7 @@ reel-filter/
 | Frontend | React 18, TypeScript, Tailwind CSS 3, Vite 5 |
 | HTTP | Axios (frontend), httpx (backend) |
 | Scraping | BeautifulSoup4 + lxml |
-| Matching | RapidFuzz (>88% auto, 75-88% review queue) |
+| Matching | Exact title + year match (SQL) |
 | Retry | tenacity (exponential backoff) |
 
 ## 📊 API Endpoints
